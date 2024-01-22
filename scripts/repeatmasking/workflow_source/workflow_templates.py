@@ -59,18 +59,9 @@ def build_repeatmodeller_database(genome_assembly_file: str, output_directory: s
 	[ -d {output_directory}/RepeatModeler/RM_DB_{species_name.replace(' ', '_')} ] || mkdir -p {output_directory}/RepeatModeler/RM_DB_{species_name.replace(' ', '_')}
 
 	BuildDatabase \
-		-name {output_directory}/RepeatModeler/RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')}.prog \
+		-name {output_directory}/RepeatModeler/RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')} \
 		-engine rmblast \
 		{genome_assembly_file}
-	
-	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nhr {outputs['db_files'][0]}
-	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nin {outputs['db_files'][1]}
-	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.njs {outputs['db_files'][2]}
-	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nnd {outputs['db_files'][3]}
-	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nni {outputs['db_files'][4]}
-	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nog {outputs['db_files'][5]}
-	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nsq {outputs['db_files'][6]}
-	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.translation {outputs['db_files'][7]}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -120,7 +111,7 @@ def repeatmodeler(database: list, working_directory: str, species_name: str):
 	echo "JobID: $SLURM_JOBID"
 	
 	RepeatModeler \
-		-database {working_directory}/RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')} \
+		-database ./RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')} \
 		-LTRStruct \
 		-pa {int(options['cores']/4)}
 	
