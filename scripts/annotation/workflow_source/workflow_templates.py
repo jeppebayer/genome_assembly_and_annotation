@@ -27,6 +27,7 @@ def star_index(genome_assembly_file: str, output_directory: str):
 	
 	:param
 	"""
+	working_dir = output_directory
 	inputs = {'assembly': genome_assembly_file}
 	outputs = {}
 	options = {
@@ -45,6 +46,7 @@ def star_index(genome_assembly_file: str, output_directory: str):
 	echo "JobID: $SLURM_JOBID"
 	
 	[ -d {output_directory}/indices ] || mkdir -p {output_directory}/indices
+	[ -d {output_directory}/tmp ] && rm -rf {output_directory}/tmp
 	[ "$(ls -A {output_directory}/indices)" ] || rm -rf {output_directory}/indices/*
 	
 	STAR \
@@ -52,12 +54,12 @@ def star_index(genome_assembly_file: str, output_directory: str):
 		--runMode genomeGenerate \
 		--genomeDir {output_directory}/indices \
 		--genomeFastaFiles {genome_assembly_file} \
-		--sjbOverhang 149
+		--outTmpDir {output_directory}/tmp
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 def star_alignment(rna_sequence_files: list, star_index_directory: str, output_directory: str, species_name: str):
 	"""
@@ -70,6 +72,7 @@ def star_alignment(rna_sequence_files: list, star_index_directory: str, output_d
 	
 	:param
 	"""
+	working_dir = output_directory
 	inputs = {}
 	outputs = {}
 	options = {
@@ -88,17 +91,21 @@ def star_alignment(rna_sequence_files: list, star_index_directory: str, output_d
 	echo "JobID: $SLURM_JOBID"
 	
 	[ -d {output_directory}/rna_alignment ] || mkdir -p {output_directory}/rna_alignment
+	[ -d {output_directory}/tmp ] && rm -rf {output_directory}/tmp
 	
 	STAR \
 		--runThreadsN {options['cores']} \
+		--runMode alignReads \
 		--genomeDir {star_index_directory} \
 		--readFilesIn {" ".join(rna_sequence_files)} \
 		--readFilesCommand zcat \
-		--outFileNamePrefix {output_directory}/rna_alignment
-	
-	mv
+		--outFileNamePrefix {output_directory}/rna_alignment/{species_abbreviation(species_name)} \
+		--outSAMtype BAM SortedByCoordinate \
+		--outSAMstrandfield intronMotif \
+		--outSAMattrRGline ID:{species_abbreviation(species_name)}_RNA SM:{species_abbreviation(species_name)}_RNA \
+		--outTempDir {output_directory}/tmp
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)

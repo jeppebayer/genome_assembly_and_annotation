@@ -2,6 +2,12 @@
 account: 
 # Name of species being analyzed
 species_name: 
+# Path to genome assembly file.
+genome_assembly_file:
+# List of path to RNA sequence files (read 1 & read 2)
+rna_sequence_files:
+- 
+- 
 # Directory for intermediary files.
 working_directory_path: 
 # Directory for final output files.
