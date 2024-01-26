@@ -32,12 +32,24 @@ def repeat_masking_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     )
     
     top_dir = f'{WORKING_DIR}/{SPECIES_NAME.replace(" ", "_")}/repeatmasking'
+    repeatmodeler_dir = f'{top_dir}/RepeatModeler'
+    repeatmodeler_db_dir = f'{repeatmodeler_dir}/RM_DB_{SPECIES_NAME.replace(" ", "_")}'
+    repeatmasker_dir = f'{top_dir}/RepeatMasker'
+    repeatmasker_repeatmodeler_run_dir = f'{repeatmasker_dir}/RepMod_run'
+    repeatmasker_repbase_run_dir = f'{repeatmasker_dir}/RepBase_arthropoda_run'
+
+    os.makedirs(name=top_dir, exist_ok=True)
+    os.makedirs(name=repeatmodeler_dir, exist_ok=True)
+    os.makedirs(name=repeatmodeler_db_dir, exist_ok=True)
+    os.makedirs(name=repeatmasker_dir, exist_ok=True)
+    os.makedirs(name=repeatmasker_repeatmodeler_run_dir, exist_ok=True)
+    os.makedirs(name=repeatmasker_repbase_run_dir, exist_ok=True)
 
     build_database = gwf.target_from_template(
         name=f'{species_abbreviation(SPECIES_NAME)}_build_database',
         template=build_repeatmodeller_database(
             genome_assembly_file=GENOME_ASSEMBLY,
-            output_directory=top_dir,
+            working_directory=repeatmodeler_db_dir,
             species_name=SPECIES_NAME
         )
     )
@@ -46,7 +58,7 @@ def repeat_masking_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         name=f'{species_abbreviation(SPECIES_NAME)}_RepeatModeler',
         template=repeatmodeler(
             database=build_database.outputs['db_files'],
-            working_directory=top_dir,
+            working_directory=repeatmodeler_dir,
             species_name=SPECIES_NAME
         )
     )
@@ -56,8 +68,7 @@ def repeat_masking_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         template=repeatmasker(
             genome_assembly_file=GENOME_ASSEMBLY,
             library_file=REPEAT_DATABASE,
-            output_directory=top_dir,
-            run_name='RepBase_arthropoda_run'
+            working_directory=repeatmasker_repbase_run_dir,
         )
     )
 
@@ -66,8 +77,7 @@ def repeat_masking_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         template=repeatmasker(
             genome_assembly_file=repeatmasker_database.outputs['repmaskout'][1],
             library_file=repmod.outputs['all'],
-            output_directory=top_dir,
-            run_name='RepMod_run'
+            working_directory=repeatmasker_repeatmodeler_run_dir,
         )
     )
 
@@ -77,7 +87,7 @@ def repeat_masking_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
             repeatmasker_run1=repeatmasker_database.outputs['repmaskout'],
             repeatmasker_run2=repeatmasker_repmod.outputs['repmaskout'],
             library_file=REPEAT_DATABASE,
-            output_directory=top_dir,
+            working_directory=repeatmasker_dir,
             species_name=SPECIES_NAME
         )
     )
@@ -87,7 +97,7 @@ def repeat_masking_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         template=mask_assembly(
             genome_assembly_file=GENOME_ASSEMBLY,
             annotation_file=combine.outputs['gff'],
-            output_directory=top_dir,
+            working_directory=top_dir,
             species_name=SPECIES_NAME
         )
     )

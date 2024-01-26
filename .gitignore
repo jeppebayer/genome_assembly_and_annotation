@@ -1,3 +1,4 @@
 steps/
 logs/
 test_data/
+__pycache__/

@@ -16,7 +16,7 @@ def species_abbreviation(species_name: str) -> str:
 
 ########################## RepeatMasking ##########################
 
-def build_repeatmodeller_database(genome_assembly_file: str, output_directory: str, species_name: str):
+def build_repeatmodeller_database(genome_assembly_file: str, working_directory: str, species_name: str):
 	"""
 	Template: Build ReapeatModeler database from :format:`FASTA` file using :script:`BuildDatabase` from RepeatModeler.
 	
@@ -32,15 +32,16 @@ def build_repeatmodeller_database(genome_assembly_file: str, output_directory: s
 	:param str species_name:
 		Name of species being worked on.
 	"""
+	working_dir = working_directory
 	inputs = {'assembly': genome_assembly_file}
-	outputs = {'db_files': [f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.nhr',
-						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.nin',
-						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.njs',
-						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.nnd',
-						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.nni',
-						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.nog',
-						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.nsq',
-						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.translation']}
+	outputs = {'db_files': [f'{working_directory}/{species_name.replace(" ", "_")}.nhr',
+						 	f'{working_directory}/{species_name.replace(" ", "_")}.nin',
+						 	f'{working_directory}/{species_name.replace(" ", "_")}.njs',
+						 	f'{working_directory}/{species_name.replace(" ", "_")}.nnd',
+						 	f'{working_directory}/{species_name.replace(" ", "_")}.nni',
+						 	f'{working_directory}/{species_name.replace(" ", "_")}.nog',
+						 	f'{working_directory}/{species_name.replace(" ", "_")}.nsq',
+						 	f'{working_directory}/{species_name.replace(" ", "_")}.translation']}
 	options = {
 		'cores': 2,
 		'memory': '30g',
@@ -56,17 +57,17 @@ def build_repeatmodeller_database(genome_assembly_file: str, output_directory: s
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/RepeatModeler/RM_DB_{species_name.replace(' ', '_')} ] || mkdir -p {output_directory}/RepeatModeler/RM_DB_{species_name.replace(' ', '_')}
+	[ -d {working_directory} ] || mkdir -p {working_directory}
 
 	BuildDatabase \
-		-name {output_directory}/RepeatModeler/RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')} \
+		-name {species_name.replace(' ', '_')} \
 		-engine rmblast \
 		{genome_assembly_file}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 def repeatmodeler(database: list, working_directory: str, species_name: str):
 	"""
@@ -87,7 +88,7 @@ def repeatmodeler(database: list, working_directory: str, species_name: str):
 	:param str species_name:
 		Name of species being worked on.
 	"""
-	working_dir = f'{working_directory}/RepeatModeler'
+	working_dir = working_directory
 	inputs = {'database': database}
 	outputs = {'model_result': [f'{working_directory}/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-families.fa',
 						 		f'{working_directory}/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-families.stk',
@@ -115,44 +116,44 @@ def repeatmodeler(database: list, working_directory: str, species_name: str):
 		-LTRStruct \
 		-pa {int(options['cores']/4)}
 	
-	cat {working_directory}/RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')}-families.fa \
 	| seqkit \
 		fx2tab \
+		RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')}-families.fa \
 	| awk \
 		-v species_abbreviation={species_abbreviation(species_name)} \
 		'{{print species_abbreviation"_"$0}}' \
 	| seqkit \
 		tab2fx \
-		> {working_directory}/{species_name.replace(' ', '_')}-families.prefix.prog.fa
+		> {species_name.replace(' ', '_')}-families.prefix.prog.fa
 
-	cat {working_directory}/{species_name.replace(' ', '_')}-families.prefix.prog.fa \
 	| seqkit \
 		fx2tab \
+		{species_name.replace(' ', '_')}-families.prefix.prog.fa \
 	| awk \
 		'{{if ($0 ~ /Unknown/) {{print $0}}}}' \
 	| seqkit \
 		tab2fx
-		> {working_directory}/{species_name.replace(' ', '_')}-families.prefix.unknown.prog.fa
+		> {species_name.replace(' ', '_')}-families.prefix.unknown.prog.fa
 
-	cat {working_directory}/{species_name.replace(' ', '_')}-families.prefix.prog.fa \
 	| seqkit \
 		fx2tab \
+		{species_name.replace(' ', '_')}-families.prefix.prog.fa \
 	| awk \
 		'{{if ($0 !~ /Unknown/) {{print $0}}}}' \
 	| seqkit \
 		tab2fx
-		> {working_directory}/{species_name.replace(' ', '_')}-families.prefix.known.prog.fa
+		> {species_name.replace(' ', '_')}-families.prefix.known.prog.fa
 
-	mv {working_directory}/{species_name.replace(' ', '_')}-families.prefix.prog.fa {outputs['all']}
-	mv {working_directory}/{species_name.replace(' ', '_')}-families.prefix.unknown.prog.fa {outputs['unknown']}
-	mv {working_directory}/{species_name.replace(' ', '_')}-families.prefix.known.prog.fa {outputs['known']}
+	mv {species_name.replace(' ', '_')}-families.prefix.prog.fa {outputs['all']}
+	mv {species_name.replace(' ', '_')}-families.prefix.unknown.prog.fa {outputs['unknown']}
+	mv {species_name.replace(' ', '_')}-families.prefix.known.prog.fa {outputs['known']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def repeatmasker(genome_assembly_file: str, library_file: str, output_directory: str, run_name: str):
+def repeatmasker(genome_assembly_file: str, library_file: str, working_directory: str):
 	"""
 	Template: Masks repetitive DNA using RepeatMasker and produces :format:`GFF3` annotation file.
 	
@@ -172,14 +173,14 @@ def repeatmasker(genome_assembly_file: str, library_file: str, output_directory:
 	:param str run_name:
 		Name to identify the run. Adviced to indicate library file used.
 	"""
+	working_dir = working_directory
 	inputs = {'assembly': genome_assembly_file,
 		   	  'lib': library_file}
-	outputs = {'gff': f'{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.repeats.{run_name}.gff',
-			   'repmaskout': [f'{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.cat.gz',
-						 	 f'{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.masked',
-						 	 f'{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.ori.out',
-						 	 f'{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.out',
-						 	 f'{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.tbl']}
+	outputs = {'gff': f'{working_directory}/{os.path.basename(genome_assembly_file)}.repeats.{os.path.basename(working_directory)}.gff',
+			   'repmaskout': [f'{working_directory}/{os.path.basename(genome_assembly_file)}.cat.gz',
+						 	  f'{working_directory}/{os.path.basename(genome_assembly_file)}.masked',
+						 	  f'{working_directory}/{os.path.basename(genome_assembly_file)}.out',
+						 	  f'{working_directory}/{os.path.basename(genome_assembly_file)}.tbl']}
 	options = {
 		'cores': 32,
 		'memory': '192g',
@@ -195,12 +196,12 @@ def repeatmasker(genome_assembly_file: str, library_file: str, output_directory:
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/RepeatMasker/{run_name} ] || mkdir -p {output_directory}/RepeatMasker/{run_name}
+	[ -d {working_directory} ] || mkdir -p {working_directory}
 
 	RepeatMasker \
 		-e rmblast \
 		-pa {int(options['cores']/4)} \
-		-dir {output_directory}/RepeatMasker/{run_name} \
+		-dir {working_directory} \
 		-xsmall \
 		-lib {library_file} \
 		{genome_assembly_file}
@@ -220,17 +221,17 @@ def repeatmasker(genome_assembly_file: str, library_file: str, output_directory:
 			print $5, "RepeatMasker", "repeat_region", $6, $7, ".", strand, ".", "ID="$15";Name="$10";Class="$11";Family="$11";Target="$10" "start" "$13;
 			}}
 		}}' \
-		{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.out \
-		> {output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.repeats.{run_name}.prog.gff
+		{working_directory}/{os.path.basename(genome_assembly_file)}.out \
+		> {working_directory}/{os.path.basename(genome_assembly_file)}.repeats.{os.path.basename(working_directory)}.prog.gff
 
-	mv {output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.repeats.{run_name}.prog.gff {outputs['gff']}
+	mv {working_directory}/{os.path.basename(genome_assembly_file)}.repeats.{os.path.basename(working_directory)}.prog.gff {outputs['gff']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def combine_repeatmasker_runs(repeatmasker_run1: list, repeatmasker_run2: list, library_file: str, output_directory: str, species_name: str):
+def combine_repeatmasker_runs(repeatmasker_run1: list, repeatmasker_run2: list, library_file: str, working_directory: str, species_name: str):
 	"""
 	Template: Combines the output of two different RepeatMasker runs to one complete set of files.
 	
@@ -256,15 +257,15 @@ def combine_repeatmasker_runs(repeatmasker_run1: list, repeatmasker_run2: list, 
 	:param str species_name:
 		Name of species being worked on.
 	"""
-	working_dir = f'{output_directory}/RepeatMasker'
+	working_dir = working_directory
 	inputs = {'run1': repeatmasker_run1,
 			  'run2': repeatmasker_run2,
 			  'lib': library_file}
-	outputs = {'cat': f'{output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.cat.gz',
-			   'out': f'{output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.out',
-			   'gff': f'{output_directory}/{species_abbreviation(species_name)}.repeats.gff',
-			   'other': [f'{output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.ori.out',
-						 f'{output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.tbl']}
+	outputs = {'cat': f'{working_directory}/{species_abbreviation(species_name)}.fasta.fullmask.cat.gz',
+			   'out': f'{working_directory}/{species_abbreviation(species_name)}.fasta.fullmask.out',
+			   'gff': f'{working_directory}/{species_abbreviation(species_name)}.repeats.gff',
+			   'other': [f'{working_directory}/{species_abbreviation(species_name)}.fasta.fullmask.ori.out',
+						 f'{working_directory}/{species_abbreviation(species_name)}.fasta.fullmask.tbl']}
 	options = {
 		'cores': 2,
 		'memory': '32g',
@@ -280,24 +281,24 @@ def combine_repeatmasker_runs(repeatmasker_run1: list, repeatmasker_run2: list, 
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/RepeatMasker ] || mkdir -p {output_directory}/RepeatMasker
+	[ -d {working_directory} ] || mkdir -p {working_directory}
 
 	cat \
 		{inputs['run1'][0]} \
 		{inputs['run2'][0]} \
-		> {output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.prog.cat.gz
+		> {species_abbreviation(species_name)}.fasta.fullmask.prog.cat.gz
 
 	cat \
-		{inputs['run1'][3]} \
-		<(tail -n +4 {inputs['run2'][3]}) \
-		> {output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.prog.out
+		{inputs['run1'][2]} \
+		<(tail -n +4 {inputs['run2'][2]}) \
+		> {species_abbreviation(species_name)}.fasta.fullmask.prog.out
 	
-	mv {output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.prog.cat.gz {outputs['cat']}
-	mv {output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.prog.out {outputs['out']}
+	mv {species_abbreviation(species_name)}.fasta.fullmask.prog.cat.gz {outputs['cat']}
+	mv {species_abbreviation(species_name)}.fasta.fullmask.prog.out {outputs['out']}
 		
 	ProcessRepeats \
 		-lib {library_file} \
-		{outputs['cat']}
+		{species_abbreviation(species_name)}.fasta.fullmask.cat.gz
 	
 	awk \
 		-F " " \
@@ -314,17 +315,17 @@ def combine_repeatmasker_runs(repeatmasker_run1: list, repeatmasker_run2: list, 
 			print $5, "RepeatMasker", "repeat_region", $6, $7, ".", strand, ".", "ID="$15";Name="$10";Class="$11";Family="$11";Target="$10" "start" "$13;
 			}}
 		}}' \
-		{outputs['out']} \
-		> {output_directory}/{species_abbreviation(species_name)}.repeats.prog.gff
+		{species_abbreviation(species_name)}.fasta.fullmask.out \
+		> {species_abbreviation(species_name)}.repeats.prog.gff
 
-	mv {output_directory}/{species_abbreviation(species_name)}.repeats.prog.gff {outputs['gff']}
+	mv {species_abbreviation(species_name)}.repeats.prog.gff {outputs['gff']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def mask_assembly(genome_assembly_file: str, annotation_file: str, output_directory: str, species_name: str):
+def mask_assembly(genome_assembly_file: str, annotation_file: str, working_directory: str, species_name: str):
 	"""
 	Template: Creates softmasked version of genome assembly file using :script:`bedtools`.
 	
@@ -344,10 +345,11 @@ def mask_assembly(genome_assembly_file: str, annotation_file: str, output_direct
 	:param str species_name:
 		Name of species being worked on.
 	"""
+	working_dir = working_directory
 	inputs = {'assembly': genome_assembly_file,
 		   	  'annotation': annotation_file}
-	outputs = {'masked': f'{output_directory}/{species_abbreviation(species_name)}.softmasked.fna',
-			   'bed': f'{output_directory}/{species_abbreviation(species_name)}.repeats.bed'}
+	outputs = {'masked': f'{working_directory}/{species_abbreviation(species_name)}.softmasked.fna',
+			   'bed': f'{working_directory}/{species_abbreviation(species_name)}.repeats.bed'}
 	options = {
 		'cores': 2,
 		'memory': '32g',
@@ -367,7 +369,7 @@ def mask_assembly(genome_assembly_file: str, annotation_file: str, output_direct
 		-soft \
 		-fi {genome_assembly_file} \
 		-bed {annotation_file} \
-		-fo {output_directory}/{species_abbreviation(species_name)}.softmasked.prog.fna
+		-fo {species_abbreviation(species_name)}.softmasked.prog.fna
 
 	awk \
 		-F "\t" \
@@ -376,12 +378,12 @@ def mask_assembly(genome_assembly_file: str, annotation_file: str, output_direct
 			{{print $1, ($4 - 1), $5}}
 		}}' \
 		{annotation_file} \
-		> {output_directory}/{species_abbreviation(species_name)}.repeats.prog.bed
+		> {species_abbreviation(species_name)}.repeats.prog.bed
 	
-	mv {output_directory}/{species_abbreviation(species_name)}.softmasked.prog.fna {outputs['masked']}
-	mv {output_directory}/{species_abbreviation(species_name)}.repeats.prog.bed {outputs['bed']}
+	mv {species_abbreviation(species_name)}.softmasked.prog.fna {outputs['masked']}
+	mv {species_abbreviation(species_name)}.repeats.prog.bed {outputs['bed']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
