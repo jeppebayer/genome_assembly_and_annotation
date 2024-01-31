@@ -21,7 +21,7 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
     OUTPUT_DIR: str = config['output_directory_path']
     GENOME_ASSEMBLY: str = config['genome_assembly_file']
     RNA_READS: list = config['rna_sequence_files']
-    
+    PROTEIN_DB: str = config['protein_database_file']
     
     # --------------------------------------------------
     #                  Workflow
@@ -42,4 +42,25 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
         )
     )
     
+    rna_alignment = gwf.target_from_template(
+        name=f'{species_abbreviation(SPECIES_NAME)}_STAR_alignment',
+        template=star_alignment(
+            rna_sequence_files=RNA_READS,
+            star_index_directory=f'{top_dir}/indices',
+            output_directory=top_dir,
+            species_name=SPECIES_NAME
+        )
+    )
+
+    braker = gwf.target_from_template(
+        name=f'{species_abbreviation(SPECIES_NAME)}_braker3',
+        template=braker3(
+            genome_assembly_file=GENOME_ASSEMBLY,
+            rna_alignment_bam=rna_alignment.outputs['bam'],
+            protein_database_file=PROTEIN_DB,
+            output_directory=top_dir,
+            species_name=SPECIES_NAME
+        )
+    )
+
     return gwf

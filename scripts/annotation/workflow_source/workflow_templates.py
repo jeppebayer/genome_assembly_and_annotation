@@ -29,11 +29,19 @@ def star_index(genome_assembly_file: str, output_directory: str):
 	"""
 	working_dir = output_directory
 	inputs = {'assembly': genome_assembly_file}
-	outputs = {}
+	outputs = {'indices': [f'{output_directory}/indices/chrLength.txt',
+						   f'{output_directory}/indices/chrName.txt',
+						   f'{output_directory}/indices/chrNameLength.txt',
+						   f'{output_directory}/indices/chrStart.txt',
+						   f'{output_directory}/indices/Genome',
+						   f'{output_directory}/indices/genomeParameters.txt',
+						   f'{output_directory}/indices/SA',
+						   f'{output_directory}/indices/SAindex'],
+				'log': f'{output_directory}/indices/Log.out'}
 	options = {
 		'cores': 30,
-		'memory': '240g',
-		'walltime': '48:00:00'
+		'memory': '40g',
+		'walltime': '02:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -49,13 +57,18 @@ def star_index(genome_assembly_file: str, output_directory: str):
 	[ -d {output_directory}/tmp ] && rm -rf {output_directory}/tmp
 	[ "$(ls -A {output_directory}/indices)" ] || rm -rf {output_directory}/indices/*
 	
+	salength=$(awk 'BEGIN{{genome_length = 0}} {{if ($0 ~ /[^>]/) {{genome_length += length($0) - 1}}}} END{{alt = int(((log(genome_length) / log(2)) / 2) - 1); if (alt < 14) {{print alt}} else {{print 14}}}}' {genome_assembly_file})
+
 	STAR \
 		--runThreadN {options['cores']} \
 		--runMode genomeGenerate \
 		--genomeDir {output_directory}/indices \
 		--genomeFastaFiles {genome_assembly_file} \
-		--outTmpDir {output_directory}/tmp
+		--outTmpDir {output_directory}/tmp \
+		--genomeSAindexNbases "$salength"
 	
+	mv {output_directory}/Log.out {output_directory}/indices/Log.out
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
@@ -73,12 +86,24 @@ def star_alignment(rna_sequence_files: list, star_index_directory: str, output_d
 	:param
 	"""
 	working_dir = output_directory
-	inputs = {}
-	outputs = {}
+	inputs = {'rna': rna_sequence_files,
+		   	  'indices': [f'{output_directory}/indices/chrLength.txt',
+						  f'{output_directory}/indices/chrName.txt',
+						  f'{output_directory}/indices/chrNameLength.txt',
+						  f'{output_directory}/indices/chrStart.txt',
+						  f'{output_directory}/indices/Genome',
+						  f'{output_directory}/indices/genomeParameters.txt',
+						  f'{output_directory}/indices/SA',
+						  f'{output_directory}/indices/SAindex']}
+	outputs = {'bam': f'{output_directory}/rna_alignment/{species_abbreviation(species_name)}_Aligned.sortedByCoord.out.bam',
+			   'sj': f'{output_directory}/rna_alignment/{species_abbreviation(species_name)}_SJ.out.tab',
+			   'logs': [f'{output_directory}/rna_alignment/{species_abbreviation(species_name)}_Log.final.out',
+			   			f'{output_directory}/rna_alignment/{species_abbreviation(species_name)}_Log.out',
+						f'{output_directory}/rna_alignment/{species_abbreviation(species_name)}_Log.progress.out']}
 	options = {
 		'cores': 30,
-		'memory': '240g',
-		'walltime': '48:00:00'
+		'memory': '40g',
+		'walltime': '04:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -94,18 +119,76 @@ def star_alignment(rna_sequence_files: list, star_index_directory: str, output_d
 	[ -d {output_directory}/tmp ] && rm -rf {output_directory}/tmp
 	
 	STAR \
-		--runThreadsN {options['cores']} \
+		--runThreadN {options['cores']} \
 		--runMode alignReads \
 		--genomeDir {star_index_directory} \
 		--readFilesIn {" ".join(rna_sequence_files)} \
 		--readFilesCommand zcat \
-		--outFileNamePrefix {output_directory}/rna_alignment/{species_abbreviation(species_name)} \
+		--outFileNamePrefix {output_directory}/rna_alignment/{species_abbreviation(species_name)}_ \
 		--outSAMtype BAM SortedByCoordinate \
-		--outSAMstrandfield intronMotif \
+		--outSAMstrandField intronMotif \
 		--outSAMattrRGline ID:{species_abbreviation(species_name)}_RNA SM:{species_abbreviation(species_name)}_RNA \
-		--outTempDir {output_directory}/tmp
+		--outTmpDir {output_directory}/tmp
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
+	"""
+	Template: Runs BRAKER3 which uses both RNA-sequence data and a protein database to predict genes function and annotate genome assembly.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'assembly': genome_assembly_file,
+		   	  'rna': rna_alignment_bam,
+			  'protein': protein_database_file}
+	outputs = {'gtf': f'{output_directory}/braker3/braker.gtf',
+			   'coding': f'{output_directory}/braker3/braker.codingseq',
+			   'aa': f'{output_directory}/braker3/braker.aa',
+			   'evidence': f'{output_directory}/braker3/hintsfile.gff',
+			   'cite': f'{output_directory}/braker3/what-to-cite.txt',
+			   'other': [f'{output_directory}/braker3/genome_header.map',
+						 f'{output_directory}/braker3/braker.log']}
+	options = {
+		'cores': 30,
+		'memory': '300g',
+		'walltime': '10:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate annotation
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+
+	if [ -d {output_directory}/braker3 ]; then
+		rm -rf {output_directory}/braker3
+		mkdir -p {output_directory}/braker3
+	else
+		mkdir -p {output_directory}/braker3
+	fi
+	
+	braker.pl \
+		--genome {genome_assembly_file} \
+		--bam {rna_alignment_bam} \
+		--prot_seq {protein_database_file} \
+		--species {species_name.replace(' ', '_')} \
+		--threads {options['cores']} \
+		--workingdir {output_directory}/braker3 \
+		--GENEMARK_PATH {genemark} \
+		--PROTHINT_PATH {prothint}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
