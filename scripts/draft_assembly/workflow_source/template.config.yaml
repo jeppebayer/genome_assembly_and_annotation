@@ -2,7 +2,14 @@
 account: 
 # Name of species being analyzed
 species_name: 
-# Directory for intermediary files.
-working_directory_path: 
 # Directory for final output files.
 output_directory_path: 
+# Path to PacBio sequence file.
+pacbio_hifi_sequence_file:
+# List of Hi-C sequence files if avalable (optional).
+hic_sequence_files:
+- 
+# Name of BUSCO lineage dataset to use for analysis.
+busco_dataset_name: 
+# Number of purge_dups rounds.
+purge_dups_rounds: 

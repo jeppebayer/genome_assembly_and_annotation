@@ -208,7 +208,7 @@ def repeatmasker(genome_assembly_file: str, library_file: str, working_directory
 	
 	awk \
 		-F " " \
-		'BEGIN{{OFS = "\t"; print "##gff-version 3";}}
+		'BEGIN{{OFS = "\\t"; print "##gff-version 3";}}
 		{{if (NR > 3)
 			{{if ($9 == "C")
 				{{strand = "-";}}
@@ -302,7 +302,7 @@ def combine_repeatmasker_runs(repeatmasker_run1: list, repeatmasker_run2: list, 
 	
 	awk \
 		-F " " \
-		'BEGIN{{OFS = "\t"; print "##gff-version 3";}}
+		'BEGIN{{OFS = "\\t"; print "##gff-version 3";}}
 		{{if (NR > 3)
 			{{if ($9 == "C")
 				{{strand = "-";}}
@@ -372,8 +372,8 @@ def mask_assembly(genome_assembly_file: str, annotation_file: str, working_direc
 		-fo {species_abbreviation(species_name)}.softmasked.prog.fna
 
 	awk \
-		-F "\t" \
-		'BEGIN{{OFS = "\t"}}
+		-F "\\t" \
+		'BEGIN{{OFS = "\\t"}}
 		{{if ($0 ~ /^[^#]/)
 			{{print $1, ($4 - 1), $5}}
 		}}' \
