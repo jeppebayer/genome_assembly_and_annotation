@@ -80,11 +80,15 @@ def draft_assembly_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         )
     )
 
-    for i in range(PURGE_ROUNDS):
+    for i in range(1, PURGE_ROUNDS + 1):
+        if i == 1:
+            in_file = hifiasm_2.outputs['fasta'][0]
+        else:
+            in_file = step3.outputs['purged']
         step1 = gwf.target_from_template(
-            name=f'{species_abbreviation(SPECIES_NAME)}_purge_dups_step_1_round_{i+1:02}',
+            name=f'{species_abbreviation(SPECIES_NAME)}_purge_dups_step_1_round_{i:02}',
             template=purge_dups_1_map_hifi_to_genome(
-                gemone_assembly_file=hifiasm_2.outputs['fasta'][0],
+                gemone_assembly_file=in_file,
                 hifi_sequence_file=HIFI_SEQ,
                 output_directory=top_dir,
                 species_name=SPECIES_NAME,
@@ -92,28 +96,28 @@ def draft_assembly_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
             )
         )
         step2 = gwf.target_from_template(
-            name=f'{species_abbreviation(SPECIES_NAME)}_purge_dups_step_2_round_{i+1:02}',
+            name=f'{species_abbreviation(SPECIES_NAME)}_purge_dups_step_2_round_{i:02}',
             template=purge_dups_2_map_to_self(
-                genome_assembly_file=hifiasm_2.outputs['fasta'][0],
+                genome_assembly_file=in_file,
                 output_directory=top_dir,
                 species_name=SPECIES_NAME,
                 round_number=i
             )
         )
         step3 = gwf.target_from_template(
-            name=f'{species_abbreviation(SPECIES_NAME)}_purge_dups_step_3_round_{i+1:02}',
+            name=f'{species_abbreviation(SPECIES_NAME)}_purge_dups_step_3_round_{i:02}',
             template=purge_dups_3_purge_duplicates(
                 pb_stat_file=step1.outputs['stat'],
                 pb_base_cov_file=step1.outputs['cov'],
                 self_alignment_paf=step2.outputs['paf'],
-                genome_assembly_file=hifiasm_2.outputs['fasta'][0],
+                genome_assembly_file=in_file,
                 output_directory=top_dir,
                 species_name=SPECIES_NAME,
                 round_number=i
             )
         )
         purge_busco = gwf.target_from_template(
-            name=f'{species_abbreviation(SPECIES_NAME)}_purge_dups_busco_round_{i+1:02}',
+            name=f'{species_abbreviation(SPECIES_NAME)}_purge_dups_busco_round_{i:02}',
             template=busco_genome(
                 genome_assembly_file=step3.outputs['purged'],
                 busco_dataset=BUSCO_DATASET
