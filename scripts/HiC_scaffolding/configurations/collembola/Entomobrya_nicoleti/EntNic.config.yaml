@@ -1,0 +1,12 @@
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+species_name: Entomobrya nicoleti
+# List of path to Hi-C sequence files.
+hic_sequence_files:
+- /faststorage/project/EcoGenetics/BACKUP/HiC/EntNic/Ent_Nic_L1_1.fq.gz
+- /faststorage/project/EcoGenetics/BACKUP/HiC/EntNic/Ent_Nic_L1_2.fq.gz
+# Path to draft genome file.
+draft_genome_file: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Entomobrya_nicoleti/EG_EntNic_16022023_genomic_nomask_noann.fna
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola

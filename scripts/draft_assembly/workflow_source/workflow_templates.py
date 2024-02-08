@@ -14,7 +14,9 @@ def species_abbreviation(species_name: str) -> str:
 	species = species[0].upper() + species[1:3]
 	return genus + species
 
+#------------------------------------------------------------------------
 ########################## Draft assembly HiFi ##########################
+#------------------------------------------------------------------------
 
 def hifiadapterfilt(pacbio_hifi_file: str, output_directory: str, hifiadapterfilt_directory: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/HiFiAdapterFilt'):
 	"""
@@ -218,9 +220,11 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 			   'nobub': [f'{output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_utg.gfa',
 				  	   	 f'{output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_utg.lowQ.bed',
 					   	 f'{output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_utg.noseq.gfa'],
-			   'other': [f'{output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.hic.ec.bin',
-			   			 f'{output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.hic.ovlp.reverse.bin',
-						 f'{output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.hic.ovlp.source.bin']}
+			   'other': [f'{output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.ec.bin',
+			   			 f'{output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.ovlp.reverse.bin',
+						 f'{output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.ovlp.source.bin',
+						 f'{output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.hic.lk.bin',
+						 f'{output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.hic.tlb.bin']}
 	protect = outputs['fasta'] + outputs['hap1'] + outputs['hap2']
 	options = {
 		'cores': 32,
@@ -263,9 +267,11 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 	mv {output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.p_utg.gfa {outputs['nobub'][0]}
 	mv {output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.p_utg.lowQ.bed {outputs['nobub'][1]}
 	mv {output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.p_utg.noseq.gfa {outputs['nobub'][2]}
-	mv {output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.ec.bin {outputs['other'][0]}
-	mv {output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.ovlp.reverse.bin {outputs['other'][1]}
-	mv {output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.ovlp.source.bin {outputs['other'][2]}
+	mv {output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.prog.ec.bin {outputs['other'][0]}
+	mv {output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.prog.ovlp.reverse.bin {outputs['other'][1]}
+	mv {output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.prog.ovlp.source.bin {outputs['other'][2]}
+	mv {output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.lk.bin {outputs['other'][3]}
+	mv {output_directory}/draft_assembly/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.tlb.bin {outputs['other'][4]}
 	
 	awk \
         'BEGIN{{FS="\\t"}}
@@ -411,6 +417,52 @@ def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_p
 		--mode genome \
 		--out busco_{os.path.basename(genome_assembly_file)} \
 		--out_path {os.path.dirname(genome_assembly_file)} \
+		--download_path {busco_download_path} \
+		--lineage {busco_download_path}/lineages/{busco_dataset} \
+		--tar
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+def busco_protein(protein_sequence_file: str, busco_dataset: str, busco_download_path: str = '/faststorage/project/EcoGenetics/BACKUP/database/busco'):
+	"""
+	Template: Runs BUSCO analysis on protein sequences from an annotated gene set.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'genome': protein_sequence_file}
+	outputs = {'stattxt': f'{os.path.dirname(protein_sequence_file)}/busco_{os.path.basename(protein_sequence_file)}/short_summary.specific.{busco_dataset}.busco_{os.path.basename(protein_sequence_file)}.txt',
+			   'statjson': f'{os.path.dirname(protein_sequence_file)}/busco_{os.path.basename(protein_sequence_file)}/short_summary.specific.{busco_dataset}.busco_{os.path.basename(protein_sequence_file)}.json'}
+	protect = [outputs['stattxt'], outputs['statjson']]
+	options = {
+		'cores': 30,
+		'memory': '50g',
+		'walltime': '10:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate assembly
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	busco \
+		--cpu {options['cores']} \
+		--force \
+		--in {protein_sequence_file} \
+		--mode proteins \
+		--out busco_{os.path.basename(protein_sequence_file)} \
+		--out_path {os.path.dirname(protein_sequence_file)} \
 		--download_path {busco_download_path} \
 		--lineage {busco_download_path}/lineages/{busco_dataset} \
 		--tar
