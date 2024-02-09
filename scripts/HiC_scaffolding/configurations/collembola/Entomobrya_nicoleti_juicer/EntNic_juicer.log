@@ -1,0 +1,7 @@
+(-: Looking for fastq files...fastq files exist
+(-: Aligning files matching /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Entomobrya_nicoleti/HiC_scaffolding/juicer/fastq/*_R*.fastq*
+ in queue short to genome hg19 with no fragment delimited maps.
+---  Using already created files in /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Entomobrya_nicoleti/HiC_scaffolding/juicer/splits
+
+(-: Starting job to launch other jobs once splitting is complete
+(-: Finished adding all jobs... Now is a good time to get that cup of coffee... Last job id 31315587

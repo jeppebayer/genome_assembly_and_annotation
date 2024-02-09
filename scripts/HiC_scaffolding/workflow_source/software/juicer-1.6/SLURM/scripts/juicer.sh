@@ -119,7 +119,7 @@ else
     # load_gpu="spack load cuda@8.0.61 arch=\`spack arch\` && CUDA_VISIBLE_DEVICES=0,1,2,3"
     # call_gem="/gpfs0/work/neva/gem3-mapper/bin/gem-mapper --3c"
 	load_bwa="
-		source /home/"$USER"/.bashrc
+		source /home/jepe/.bashrc
 		source activate assembly
 	"
 	load_awk=""
@@ -478,7 +478,7 @@ fi
 jid=`sbatch <<- HEADER | egrep -o -e "\b[0-9]+$"
 	#!/bin/bash -l 
         $userstring
-	
+	#SBATCH --account EcoGenetics
 	#SBATCH -p $queue
 	#SBATCH -t 2
 	#SBATCH -c 1
@@ -550,6 +550,7 @@ then
 		    jid=`sbatch <<- SPLITEND | egrep -o -e "\b[0-9]+$"
 			#!/bin/bash -l
                         #SBATCH -p $queue
+			#SBATCH --account EcoGenetics
 			#SBATCH -t $queue_time
 			#SBATCH -c 1
 			#SBATCH --mem=5G
@@ -566,6 +567,7 @@ SPLITEND`
 			# shellcheck disable=SC2006,SC2196
 		    jid=`sbatch <<- SPLITEND | egrep -o -e "\b[0-9]+$"
 			#!/bin/bash -l
+			#SBATCH --account EcoGenetics
 			#SBATCH -p $queue
 			#SBATCH -t $queue_time
 			#SBATCH -c 1
@@ -637,6 +639,7 @@ SPLITEND`
 	# shellcheck disable=SC2006,SC2196
 	jid=`sbatch <<- CNTLIG |  egrep -o -e "\b[0-9]+$"
 		#!/bin/bash -l
+		#SBATCH --account EcoGenetics
 		#SBATCH -p $queue
 		#SBATCH -t $queue_time
 		#SBATCH -c 1
@@ -658,6 +661,7 @@ CNTLIG`
 		# shellcheck disable=SC2006,SC2196
 	    jid=`sbatch <<- ALGNR1 | egrep -o -e "\b[0-9]+$"
 		#!/bin/bash -l
+		#SBATCH --account EcoGenetics
 		#SBATCH -p $queue
 		#SBATCH -o $debugdir/align1-%j.out
 		#SBATCH -e $debugdir/align1-%j.err
@@ -714,6 +718,7 @@ ALGNR1`
 	# shellcheck disable=SC2006,SC2196
 	jid=`sbatch <<- MRGALL | egrep -o -e "\b[0-9]+$"
 		#!/bin/bash -l
+		#SBATCH --account EcoGenetics
 		#SBATCH -p $long_queue
 		#SBATCH -o $debugdir/merge-%j.out
 		#SBATCH -e $debugdir/merge-%j.err
@@ -791,6 +796,7 @@ MRGALL`
 	# shellcheck disable=SC2006
 	jid=`sbatch <<- EOF
 		#!/bin/bash -l
+		#SBATCH --account EcoGenetics
 		#SBATCH -o $debugdir/aligncheck-%j.out
 		#SBATCH -e $debugdir/aligncheck-%j.err
 		#SBATCH -t $queue_time
@@ -843,6 +849,7 @@ then
 	# shellcheck disable=SC2006
     jid=`sbatch <<- EOF
 		#!/bin/bash -l
+		#SBATCH --account EcoGenetics
 		#SBATCH -o $debugdir/fragmerge-%j.out
 		#SBATCH -e $debugdir/fragmerge-%j.err
 		${sbatch_mem_alloc}
@@ -906,6 +913,7 @@ then
 	# shellcheck disable=SC2006,SC2196
     guardjid=`sbatch <<- DEDUPGUARD | egrep -o -e "\b[0-9]+$"
 	#!/bin/bash -l
+	#SBATCH --account EcoGenetics
 	#SBATCH -p $queue
 	#SBATCH -o $debugdir/dedupguard-%j.out
 	#SBATCH -e $debugdir/dedupguard-%j.err
@@ -926,6 +934,7 @@ DEDUPGUARD`
 	# shellcheck disable=SC2006,SC2196
     jid=`sbatch <<- DEDUP | egrep -o -e "\b[0-9]+$"
 	#!/bin/bash -l
+	#SBATCH --account EcoGenetics
 	#SBATCH -p $queue
 	#SBATCH --mem-per-cpu=2G
 	#SBATCH -o $debugdir/dedup-%j.out
@@ -964,6 +973,7 @@ DEDUP`
 	# shellcheck disable=SC2006,SC2196
     jid=`sbatch <<- MSPLITWAIT | egrep -o -e "\b[0-9]+$"
 	#!/bin/bash -l
+	#SBATCH --account EcoGenetics
 	#SBATCH -p $queue
 	#SBATCH -o $debugdir/post_dedup-%j.out
 	#SBATCH -e $debugdir/post_dedup-%j.err
@@ -1003,6 +1013,7 @@ if [ -z $postproc ]
     # shellcheck disable=SC2006,SC2196
 	jid=`sbatch <<- DUPCHECK | egrep -o -e "\b[0-9]+$"
 	#!/bin/bash -l
+	#SBATCH --account EcoGenetics
 	#SBATCH -p $queue
 	#SBATCH -o $debugdir/dupcheck-%j.out
 	#SBATCH -e $debugdir/dupcheck-%j.err
@@ -1025,6 +1036,7 @@ DUPCHECK`
 	# shellcheck disable=SC2006,SC2196
     jid=`sbatch <<- PRESTATS | egrep -o -e "\b[0-9]+$"
 	#!/bin/bash -l
+	#SBATCH --account EcoGenetics
 	#SBATCH -p $queue
 	#SBATCH -o $debugdir/prestats-%j.out
 	#SBATCH -e $debugdir/prestats-%j.err
@@ -1052,6 +1064,7 @@ PRESTATS`
 	# shellcheck disable=SC2006,SC2196
     jid=`sbatch <<- STATS | egrep -o -e "\b[0-9]+$"
 		#!/bin/bash -l
+		#SBATCH --account EcoGenetics
 		#SBATCH -p $long_queue
 		#SBATCH -o $debugdir/stats-%j.out
 		#SBATCH -e $debugdir/stats-%j.err
@@ -1079,6 +1092,7 @@ STATS`
 	# shellcheck disable=SC2006,SC2196
     jid=`sbatch <<- STATS30 | egrep -o -e "\b[0-9]+$"
 		#!/bin/bash -l
+		#SBATCH --account EcoGenetics
 		#SBATCH -p $long_queue
 		#SBATCH -o $debugdir/stats30-%j.out
 		#SBATCH -e $debugdir/stats30-%j.err
@@ -1100,6 +1114,7 @@ STATS30`
 	# shellcheck disable=SC2006,SC2196
     jid=`sbatch <<- CONCATFILES | egrep -o -e "\b[0-9]+$"
 		#!/bin/bash -l
+		#SBATCH --account EcoGenetics
 		#SBATCH -p $long_queue
 		#SBATCH -o $debugdir/stats30-%j.out
 		#SBATCH -e $debugdir/stats30-%j.err
@@ -1126,6 +1141,7 @@ CONCATFILES`
 	# shellcheck disable=SC2006,SC2196
 	jid=`sbatch <<- FINCLN1 | egrep -o -e "\b[0-9]+$" 
 	#!/bin/bash -l
+	#SBATCH --account EcoGenetics
 	#SBATCH -p $queue
 	#SBATCH --mem=2G
 	#SBATCH -o $debugdir/fincln1-%j.out
@@ -1150,6 +1166,7 @@ FINCLN1`
 	# shellcheck disable=SC2006,SC2196
     jid=`sbatch <<- HIC | egrep -o -e "\b[0-9]+$"
 	#!/bin/bash -l
+	#SBATCH --account EcoGenetics
 	#SBATCH -p $long_queue
 	#SBATCH -o $debugdir/hic-%j.out
 	#SBATCH -e $debugdir/hic-%j.err	
@@ -1185,6 +1202,7 @@ HIC`
 	# shellcheck disable=SC2006,SC2196
     jid=`sbatch <<- HIC30 | egrep -o -e "\b[0-9]+$"
 	#!/bin/bash -l
+	#SBATCH --account EcoGenetics
 	#SBATCH -p $long_queue
 	#SBATCH -o $debugdir/hic30-%j.out
 	#SBATCH -e $debugdir/hic30-%j.err
@@ -1229,6 +1247,7 @@ then
 	# shellcheck disable=SC2006,SC2196
     jid=`sbatch <<- HICCUPS | egrep -o -e "\b[0-9]+$"
 	#!/bin/bash -l
+	#SBATCH --account EcoGenetics
 	#SBATCH -p $queue
 	#SBATCH --mem-per-cpu=4G
 	${sbatch_req}
@@ -1261,6 +1280,7 @@ fi
 # shellcheck disable=SC2006,SC2196
 jid=`sbatch <<- ARROWS | egrep -o -e "\b[0-9]+$"
 	#!/bin/bash -l
+	#SBATCH --account EcoGenetics
 	#SBATCH -p $queue
 	#SBATCH --mem-per-cpu=8G
 	#SBATCH -o $debugdir/arrowhead_wrap-%j.out
@@ -1286,6 +1306,7 @@ dependarrows="${dependhiccups}:$jid"
 # shellcheck disable=SC2006,SC2196
 jid=`sbatch <<- FINCLN1 | egrep -o -e "\b[0-9]+$"
 	#!/bin/bash -l
+	#SBATCH --account EcoGenetics
 	#SBATCH -p $queue
 	#SBATCH --mem-per-cpu=2G
 	#SBATCH -o $debugdir/fincln-%j.out

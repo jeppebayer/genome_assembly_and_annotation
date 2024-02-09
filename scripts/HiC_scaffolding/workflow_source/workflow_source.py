@@ -4,7 +4,7 @@ from gwf.workflow import collect
 import os, yaml, glob, sys
 from workflow_templates import *
 
-def hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
+def yahs_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     """
     Workflow: Scaffolds draft genome assembly using Hi-C data
     
@@ -36,7 +36,8 @@ def hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     index = gwf.target_from_template(
         name=f'{species_abbreviation(SPECIES_NAME)}_index',
         template=index_reference(
-            reference_genome_file=DRAFT_GENOME
+            reference_genome_file=DRAFT_GENOME,
+            output_directory=top_dir
         )
     )
     

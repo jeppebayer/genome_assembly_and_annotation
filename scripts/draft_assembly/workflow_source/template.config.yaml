@@ -6,6 +6,8 @@ species_name:
 output_directory_path: 
 # Path to PacBio sequence file.
 pacbio_hifi_sequence_file:
+# Use Hi-C data during assembly? (1 = Yes/2 = No/3 = Both).
+use_hic_data:
 # List of Hi-C sequence files if avalable (optional).
 hic_sequence_files:
 - 

@@ -419,7 +419,8 @@ def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_p
 		--out_path {os.path.dirname(genome_assembly_file)} \
 		--download_path {busco_download_path} \
 		--lineage {busco_download_path}/lineages/{busco_dataset} \
-		--tar
+		--tar \
+		--offline
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -473,7 +474,7 @@ def busco_protein(protein_sequence_file: str, busco_dataset: str, busco_download
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
 ########################## Purge duplicates ##########################
-def purge_dups_1_map_hifi_to_genome(gemone_assembly_file: str, hifi_sequence_file: str, output_directory: str, species_name: str, round_number: int = 1):
+def purge_dups_1_map_hifi_to_genome(gemone_assembly_file: str, hifi_sequence_file: str, output_directory: str, species_name: str, directory_addition: str = None, round_number: int = 1):
 	"""
 	Template: Align PacBio HiFi sequence data to genome.
 	
@@ -484,11 +485,15 @@ def purge_dups_1_map_hifi_to_genome(gemone_assembly_file: str, hifi_sequence_fil
 	
 	:param
 	"""
+	if directory_addition:
+		directory_addition = '_' + directory_addition
+	else:
+		directory_addition = ''
 	inputs = {'genome': gemone_assembly_file,
 		   	  'hifi': hifi_sequence_file}
-	outputs = {'paf': f'{output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/{species_abbreviation(species_name)}.paf.gz',
-			   'stat': f'{output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/PB.stat',
-			   'cov': f'{output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/PB.base.cov'}
+	outputs = {'paf': f'{output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.paf.gz',
+			   'stat': f'{output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/PB.stat',
+			   'cov': f'{output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/PB.base.cov'}
 	options = {
 		'cores': 30,
 		'memory': '60g',
@@ -504,7 +509,7 @@ def purge_dups_1_map_hifi_to_genome(gemone_assembly_file: str, hifi_sequence_fil
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments ] || mkdir -p {output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments
+	[ -d {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments ] || mkdir -p {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments
 	
 	minimap2 \
 		-x map-hifi \
@@ -514,20 +519,20 @@ def purge_dups_1_map_hifi_to_genome(gemone_assembly_file: str, hifi_sequence_fil
 	| gzip \
 		-c \
 		- \
-		> {output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/{species_abbreviation(species_name)}.prog.paf.gz
+		> {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.prog.paf.gz
 	
-	pcbstat \
-		-O {output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/ \
-		{output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/{species_abbreviation(species_name)}.prog.paf.gz
+	pbcstat \
+		-O {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/ \
+		{output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.prog.paf.gz
 	
-	mv {output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/{species_abbreviation(species_name)}.prog.paf.gz {outputs['paf']}
+	mv {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.prog.paf.gz {outputs['paf']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def purge_dups_2_map_to_self(genome_assembly_file: str, output_directory: str, species_name: str, round_number: int = 1):
+def purge_dups_2_map_to_self(genome_assembly_file: str, output_directory: str, species_name: str, directory_addition: str = None, round_number: int = 1):
 	"""
 	Template: Splits assembly into equal pieces and maps it to itself.
 	
@@ -538,9 +543,13 @@ def purge_dups_2_map_to_self(genome_assembly_file: str, output_directory: str, s
 	
 	:param
 	"""
+	if directory_addition:
+		directory_addition = '_' + directory_addition
+	else:
+		directory_addition = ''
 	inputs = {'genome': genome_assembly_file}
-	outputs = {'split': f'{output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/{species_abbreviation(species_name)}.split.fasta',
-			   'paf': f'{output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/{species_abbreviation(species_name)}.self.paf.gz'}
+	outputs = {'split': f'{output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.split.fasta',
+			   'paf': f'{output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.self.paf.gz'}
 	options = {
 		'cores': 30,
 		'memory': '60g',
@@ -556,13 +565,13 @@ def purge_dups_2_map_to_self(genome_assembly_file: str, output_directory: str, s
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments ] || mkdir -p {output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments
+	[ -d {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments ] || mkdir -p {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments
 	
 	split_fa \
 		{genome_assembly_file} \
-		> {output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/{species_abbreviation(species_name)}.split.prog.fasta
+		> {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.split.prog.fasta
 	
-	mv {output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/{species_abbreviation(species_name)}.split.prog.fasta {outputs['split']}
+	mv {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.split.prog.fasta {outputs['split']}
 
 	minimap2 \
 		-x asm5 \
@@ -574,16 +583,16 @@ def purge_dups_2_map_to_self(genome_assembly_file: str, output_directory: str, s
 	| gzip \
 		-c \
 		- \
-		> {output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/{species_abbreviation(species_name)}.self.prog.paf.gz
+		> {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.self.prog.paf.gz
 	
-	mv {output_directory}/draft_assembly/purge_dups/{round_number:02}/alignments/{species_abbreviation(species_name)}.self.prog.paf.gz {outputs['paf']}
+	mv {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.self.prog.paf.gz {outputs['paf']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def purge_dups_3_purge_duplicates(pb_stat_file: str, pb_base_cov_file: str, self_alignment_paf: str, genome_assembly_file: str, output_directory: str, species_name: str, round_number: int = 1):
+def purge_dups_3_purge_duplicates(pb_stat_file: str, pb_base_cov_file: str, self_alignment_paf: str, genome_assembly_file: str, output_directory: str, species_name: str, directory_addition: str = None, round_number: int = 1):
 	"""
 	Template: Purge haplotigs and opverlaps using :script:`purge_dups`.
 	
@@ -594,13 +603,18 @@ def purge_dups_3_purge_duplicates(pb_stat_file: str, pb_base_cov_file: str, self
 	
 	:param
 	"""
+	if directory_addition:
+		directory_addition = '_' + directory_addition
+	else:
+		directory_addition = ''
 	inputs = {'stat': pb_stat_file,
 		   	  'cov': pb_base_cov_file,
 			  'self': self_alignment_paf,
 			  'genome': genome_assembly_file}
-	outputs = {'cutoffs': f'{output_directory}/draft_assembly/purge_dups/{round_number:02}/cutoffs',
-			   'dups': f'{output_directory}/draft_assembly/purge_dups/{round_number:02}/dups.bed',
-			   'purged': f'{output_directory}/draft_assembly/purge_dups/{round_number:02}/{species_abbreviation(species_name)}.purged.fa'}
+	outputs = {'cutoffs': f'{output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/cutoffs',
+			   'dups': f'{output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/dups.bed',
+			   'purged': f'{output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.purged.fa',
+			   'hap': f'{output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.hap.fa'}
 	options = {
 		'cores': 2,
 		'memory': '20g',
@@ -616,29 +630,30 @@ def purge_dups_3_purge_duplicates(pb_stat_file: str, pb_base_cov_file: str, self
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/draft_assembly/purge_dups/{round_number:02} ] || mkdir -p {output_directory}/draft_assembly/purge_dups/{round_number:02}
+	[ -d {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02} ] || mkdir -p {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}
 	
 	calcuts \
 		{pb_stat_file} \
-		> {output_directory}/draft_assembly/purge_dups/{round_number:02}/cutoffs.prog
+		> {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/cutoffs.prog
 	
-	mv {output_directory}/draft_assembly/purge_dups/{round_number:02}/cutoffs.prog {outputs['cutoffs']}
+	mv {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/cutoffs.prog {outputs['cutoffs']}
 
 	purge_dups \
 		-2 \
 		-T {outputs['cutoffs']} \
 		-c {pb_base_cov_file} \
 		{self_alignment_paf} \
-		> {output_directory}/draft_assembly/purge_dups/{round_number:02}/dups.prog.bed
+		> {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/dups.prog.bed
 
-	mv {output_directory}/draft_assembly/purge_dups/{round_number:02}/dups.prog.bed {outputs['dups']}
+	mv {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/dups.prog.bed {outputs['dups']}
 
 	get_seqs \
-		-p {output_directory}/draft_assembly/purge_dups/{round_number:02}/{species_abbreviation(species_name)}.prog \
+		-p {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog \
 		{outputs['dups']} \
 		{genome_assembly_file}
 
-	mv {output_directory}/draft_assembly/purge_dups/{round_number:02}/{species_abbreviation(species_name)}.prog {outputs['purged']}
+	mv {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog.purged.fa {outputs['purged']}
+	mv {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog.hap.fa {outputs['hap']}
 	
 	awk \
 		'BEGIN{{OFS="\\t"}}
@@ -658,11 +673,11 @@ def purge_dups_3_purge_duplicates(pb_stat_file: str, pb_base_cov_file: str, self
 		print sequence_number"_sequences", total_length + sequence_length
 		}}' \
 		{outputs['purged']} \
-		> {output_directory}/draft_assembly/purge_dups/{round_number:02}/sequences.tsv
+		> {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/sequences.tsv
 
-	last_line=($(tail -n 1 {output_directory}/draft_assembly/purge_dups/{round_number:02}/sequences.tsv))
+	last_line=($(tail -n 1 {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/sequences.tsv))
 
-	mv {output_directory}/draft_assembly/purge_dups/{round_number:02}/sequences.tsv {output_directory}/draft_assembly/purge_dups/{round_number:02}/sequences_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
+	mv {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/sequences.tsv {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/sequences_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

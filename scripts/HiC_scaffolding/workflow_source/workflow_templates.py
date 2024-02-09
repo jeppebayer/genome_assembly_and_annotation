@@ -18,7 +18,7 @@ def species_abbreviation(species_name: str) -> str:
 ########################## Hi-C scaffolding YaHS ##########################
 #--------------------------------------------------------------------------
 
-def index_reference(reference_genome_file: str):
+def index_reference(reference_genome_file: str, output_directory: str):
 	"""
 	Template: Index reference genome using both :script:`bwa index` and :script:`samtools faidx`.
 	
@@ -30,12 +30,12 @@ def index_reference(reference_genome_file: str):
 	:param
 	"""
 	inputs = {'reference': reference_genome_file}
-	outputs = {'bwa': [f'{reference_genome_file}.amb',
-					   f'{reference_genome_file}.ann',
-					   f'{reference_genome_file}.pac',
-					   f'{reference_genome_file}.bwt',
-					   f'{reference_genome_file}.sa'],
-			   'fai': f'{reference_genome_file}.fai'}
+	outputs = {'bwa': [f'{output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}.amb',
+					   f'{output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}.ann',
+					   f'{output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}.pac',
+					   f'{output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}.bwt',
+					   f'{output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}.sa'],
+			   'fai': f'{output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}.fai'}
 	protect = [outputs['bwa'][0], outputs['bwa'][1], outputs['bwa'][2], outputs['bwa'][3], outputs['bwa'][4], outputs['fai']]
 	options = {
 		'cores': 1,
@@ -52,15 +52,18 @@ def index_reference(reference_genome_file: str):
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
+	[ -d {output_directory}/HiC_scaffolding/YaHS/reference ] || mkdir -p {output_directory}/HiC_scaffolding/YaHS/reference
+	ln -s {reference_genome_file} {output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}
+
 	bwa index \
-		-p {reference_genome_file} \
-		{reference_genome_file}
+		-p {output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)} \
+		{output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}
 	
 	samtools faidx \
-		-o {reference_genome_file}.prog.fai \
-		{reference_genome_file}
+		-o {output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}.prog.fai \
+		{output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}
 	
-	mv {reference_genome_file}.prog.fai {outputs['fai']}
+	mv {output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}.prog.fai {outputs['fai']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -81,7 +84,7 @@ def hic_alignment_to_draft_assembly(hic_seqeuence_files: list, draft_genome_file
 	inputs = {'hic_reads': hic_seqeuence_files,
 		   	  'genome': draft_genome_file,
 			  'indices': reference_indices}
-	outputs = {'bam': f'{output_directory}/HiC_scaffolding/alignment/{species_abbreviation(species_name)}.HiC_to_draft.bam'}
+	outputs = {'bam': f'{output_directory}/HiC_scaffolding/YaHS/alignment/{species_abbreviation(species_name)}.HiC_to_draft.bam'}
 	options = {
 		'cores': 36,
 		'memory': '100g',
@@ -97,7 +100,7 @@ def hic_alignment_to_draft_assembly(hic_seqeuence_files: list, draft_genome_file
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/HiC_scaffolding/alignment/tmp ] || mkdir -p {output_directory}/HiC_scaffolding/alignment/tmp
+	[ -d {output_directory}/HiC_scaffolding/YaHS/alignment/tmp ] || mkdir -p {output_directory}/HiC_scaffolding/YaHS/alignment/tmp
 	
 	bwa mem \
         -t {options['cores']} \
@@ -113,10 +116,10 @@ def hic_alignment_to_draft_assembly(hic_seqeuence_files: list, draft_genome_file
         -@ {int(options['cores']) - 1} \
 		-n \
         -O BAM \
-        -T {output_directory}/HiC_scaffolding/alignment/tmp \
-        -o {output_directory}/HiC_scaffolding/alignment/{species_abbreviation(species_name)}.HiC_to_draft.prog.bam
+        -T {output_directory}/HiC_scaffolding/YaHS/alignment/tmp \
+        -o {output_directory}/HiC_scaffolding/YaHS/alignment/{species_abbreviation(species_name)}.HiC_to_draft.prog.bam
 	
-	mv {output_directory}/HiC_scaffolding/alignment/{species_abbreviation(species_name)}.HiC_to_draft.prog.bam {outputs['bam']}
+	mv {output_directory}/HiC_scaffolding/YaHS/alignment/{species_abbreviation(species_name)}.HiC_to_draft.prog.bam {outputs['bam']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -153,7 +156,7 @@ def mark_duplicates_picard(alignment_bam_file: str, output_directory: str):
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/HiC_scaffolding/alignment/tmp ] || mkdir -p {output_directory}/HiC_scaffolding/alignment/tmp
+	[ -d {output_directory}/HiC_scaffolding/YaHS/alignment/tmp ] || mkdir -p {output_directory}/HiC_scaffolding/YaHS/alignment/tmp
 	
 	export _JAVA_OPTIONS="-Xmx100G"
 
@@ -161,7 +164,7 @@ def mark_duplicates_picard(alignment_bam_file: str, output_directory: str):
 		--INPUT {alignment_bam_file} \
 		--OUTPUT {os.path.splitext(alignment_bam_file)[0]}.markdup.prog.bam \
 		--METRICS_FILE {os.path.splitext(alignment_bam_file)[0]}.markdup.prog.txt \
-		--TMP_DIR {output_directory}/HiC_scaffolding/alignment/tmp
+		--TMP_DIR {output_directory}/HiC_scaffolding/YaHS/alignment/tmp
 	
 	mv {os.path.splitext(alignment_bam_file)[0]}.markdup.prog.bam {outputs['markdup']}
 	mv {os.path.splitext(alignment_bam_file)[0]}.markdup.prog.txt {outputs['metric']}
@@ -256,7 +259,7 @@ def yahs_conversion_manual_curation(hic_bin_file: str, scaffolds_final_agp_file:
 
     juicer pre \
         -a \
-        -o {output_directory}/HiC_sacffolding/YaHS´/{species_abbreviation(species_name)}.JBAT.prog \
+        -o {output_directory}/HiC_sacffolding/YaHS/{species_abbreviation(species_name)}.JBAT.prog \
         {hic_bin_file} \
         {scaffolds_final_agp_file} \
         {draft_assembly_fai_index_file} \
@@ -363,7 +366,7 @@ def contact_matrix_manual_curation(JBAT_text_file: str, JBAT_log_file: str, outp
 ########################## Hi-C scaffolding juicer ##########################
 #----------------------------------------------------------------------------
 
-def setup_for_juicer(hic_sequence_files: list, draft_genome_assembly_file: str, output_directory: str, split_size: int = 10000000):
+def setup_for_juicer(hic_sequence_files: list, draft_genome_assembly_file: str, output_directory: str, split_size: int = 8000000):
 	"""
 	Template: Set up directory structure required by the :script:`juicer` pipeline.
 	
@@ -409,11 +412,12 @@ def setup_for_juicer(hic_sequence_files: list, draft_genome_assembly_file: str, 
 	[ -d {output_directory}/HiC_scaffolding/juicer/fastq ] || mkdir -p {output_directory}/HiC_scaffolding/juicer/fastq
 	[ -d {output_directory}/HiC_scaffolding/juicer/references ] || mkdir -p {output_directory}/HiC_scaffolding/juicer/references
 	[ -d {output_directory}/HiC_scaffolding/juicer/restriction_sites ] || mkdir -p {output_directory}/HiC_scaffolding/juicer/restriction_sites
+	[ -d {output_directory}/HiC_scaffolding/juicer/splits ] && rm -rf {output_directory}/HiC_scaffolding/juicer/splits 
 	[ -d {output_directory}/HiC_scaffolding/juicer/splits ] || mkdir -p {output_directory}/HiC_scaffolding/juicer/splits
 	
-	ln -s {draft_genome_assembly_file} {outputs['reference']}
-	ln -s {hic_sequence_files[0]} {outputs['hic_reads'][0]}
-	ln -s {hic_sequence_files[1]} {outputs['hic_reads'][1]}
+	[ -e {outputs['reference']} ] || ln -s {draft_genome_assembly_file} {outputs['reference']}
+	gunzip -c {hic_sequence_files[0]} > {outputs['hic_reads'][0]}
+	gunzip -c {hic_sequence_files[1]} > {outputs['hic_reads'][1]}
 
 	bwa index \
 		-p {output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)} \
@@ -483,7 +487,7 @@ def juicer_pipeline(draft_genome_assembly_file: str, chrom_sizes_file: str, outp
 	
 	bash {juicer} \
 		-d {output_directory}/HiC_scaffolding/juicer \
-		-D {os.path.dirname(juicer)} \
+		-D {os.path.dirname(os.path.dirname(juicer))} \
 		-p {chrom_sizes_file} \
 		-A EcoGenetics \
 		-s none \

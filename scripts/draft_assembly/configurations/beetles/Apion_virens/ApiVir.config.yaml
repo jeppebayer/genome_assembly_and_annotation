@@ -6,6 +6,8 @@ species_name: Apion virens
 output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/beetles
 # Path to PacBio sequence file.
 pacbio_hifi_sequence_file: /faststorage/project/EcoGenetics/BACKUP/PacBio_HiFi/Apion_virens/ApiVir44A_m84108_230831_160317_s4.hifi_reads.bc1001.fastq.gz
+# Use Hi-C data during assembly? (1 = Yes/2 = No/3 = Both).
+use_hic_data: 3
 # List of Hi-C sequence files if avalable (optional).
 hic_sequence_files:
 - /faststorage/project/EcoGenetics/BACKUP/HiC/ApiVir/API_VIR_L1_1.fq.gz
