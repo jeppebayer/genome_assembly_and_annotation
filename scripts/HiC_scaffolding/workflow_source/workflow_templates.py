@@ -469,7 +469,7 @@ def juicer_pipeline(draft_genome_assembly_file: str, chrom_sizes_file: str, outp
 	"""
 	inputs = {'genome': draft_genome_assembly_file,
 		   	  'sizes': chrom_sizes_file}
-	outputs = {}
+	outputs = {'nodups': f'{output_directory}/HiC_scaffolding/juicer/aligned/merged_nodups.txt'}
 	options = {
 		'cores': 1,
 		'memory': '5g',
@@ -503,3 +503,46 @@ def juicer_pipeline(draft_genome_assembly_file: str, chrom_sizes_file: str, outp
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def assembly_3ddna(draft_assembly_file: str, purged_nodups_file: str, output_directory: str, working_directory: str):
+	"""
+	Template: 3D de novo assembly
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	working_dir = working_directory
+	inputs = {}
+	outputs = {'final_fasta': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.fasta',
+			   'final_asm': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.asm',
+			   'final_assembly': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.assembly',
+			   'final_cprops': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.cprops',
+			   'final_hic': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.hic'}
+	options = {
+		'cores': 30,
+		'memory': '80g',
+		'walltime': '48:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate assembly
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/HiC_scaffolding/juicer/3ddna/tmp ] || mkdir -p {output_directory}/HiC_scaffolding/juicer/3ddna/tmp
+	
+	export _JAVA_OPTIONS="-Djava.io.tmpdir={output_directory}/HiC_scaffolding/juicer/3ddna/tmp -Xmx80G"
+	3d-dna -r 3 {draft_assembly_file} {purged_nodups_file}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)

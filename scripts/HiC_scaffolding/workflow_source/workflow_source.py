@@ -121,6 +121,8 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
     
     top_dir = f'{OUTPUT_DIR}/{SPECIES_NAME.replace(" ", "_")}'
     os.makedirs(top_dir, exist_ok=True)
+    assembly_3ddna_directory = f'{top_dir}/HiC_scaffolding/juicer/3ddna'
+    os.makedirs(assembly_3ddna_directory, exist_ok=True)
 
     setup = gwf.target_from_template(
         name=f'{species_abbreviation(SPECIES_NAME)}_juicer_setup',
@@ -138,6 +140,16 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
             chrom_sizes_file=setup.outputs['sizes'],
             output_directory=top_dir,
             species_name=SPECIES_NAME
+        )
+    )
+
+    assembly = gwf.target_from_template(
+        name=f'{species_abbreviation(SPECIES_NAME)}_3d_dna',
+        template=assembly_3ddna(
+            draft_assembly_file=DRAFT_GENOME,
+            purged_nodups_file=juicer.outputs['nodups'],
+            output_directory=top_dir,
+            working_directory=assembly_3ddna_directory
         )
     )
 
