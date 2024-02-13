@@ -110,6 +110,8 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
     OUTPUT_DIR: str = config['output_directory_path']
     HIC_READS: list = config['hic_sequence_files']
     DRAFT_GENOME: str = config['draft_genome_file']
+    INPUT_SIZE: int = config['input_size']
+    EDIT_ROUDNS: int = config['number_of_edit_rounds']
     
     # --------------------------------------------------
     #                  Workflow
@@ -121,7 +123,7 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
     
     top_dir = f'{OUTPUT_DIR}/{SPECIES_NAME.replace(" ", "_")}'
     os.makedirs(top_dir, exist_ok=True)
-    assembly_3ddna_directory = f'{top_dir}/HiC_scaffolding/juicer/3ddna'
+    assembly_3ddna_directory = f'{top_dir}/HiC_scaffolding/juicer/3ddna_in{INPUT_SIZE}_r{EDIT_ROUDNS}'
     os.makedirs(assembly_3ddna_directory, exist_ok=True)
 
     setup = gwf.target_from_template(
@@ -148,8 +150,9 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
         template=assembly_3ddna(
             draft_assembly_file=DRAFT_GENOME,
             purged_nodups_file=juicer.outputs['nodups'],
-            output_directory=top_dir,
-            working_directory=assembly_3ddna_directory
+            working_directory=assembly_3ddna_directory,
+            edit_rounds=EDIT_ROUDNS,
+            input_size=INPUT_SIZE
         )
     )
 

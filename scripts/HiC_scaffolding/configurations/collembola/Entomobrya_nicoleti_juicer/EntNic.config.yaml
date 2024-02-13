@@ -10,3 +10,6 @@ hic_sequence_files:
 draft_genome_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/data/EntNic_HiFi/mixed99/hifiasm/purge_dups/04/purged.fa
 # Directory for final output files.
 output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
+# 3D-DNA settings.
+input_size: 10000 # (Default 15000)
+number_of_edit_rounds: 6 # (Default 2)

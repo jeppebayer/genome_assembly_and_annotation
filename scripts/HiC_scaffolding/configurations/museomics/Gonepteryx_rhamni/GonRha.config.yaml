@@ -1,0 +1,15 @@
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+species_name: Gonepteryx rhamni
+# List of path to Hi-C sequence files.
+hic_sequence_files:
+- /faststorage/project/EcoGenetics/BACKUP/HiC/GonRha/Gon_Rha_L1_1.fq.gz
+- /faststorage/project/EcoGenetics/BACKUP/HiC/GonRha/Gon_Rha_L1_2.fq.gz
+# Path to draft genome file.
+draft_genome_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/museomics/Gonepteryx_rhamni/draft_assembly/hifiasm/purge_dups/01/purged.fa
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/museomics
+# 3D-DNA settings.
+input_size: 15000 # (Default 15000)
+number_of_edit_rounds: 3 # (Default 2)

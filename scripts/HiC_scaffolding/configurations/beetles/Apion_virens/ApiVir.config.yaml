@@ -1,0 +1,15 @@
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+species_name: Apion virens
+# List of path to Hi-C sequence files.
+hic_sequence_files:
+- /faststorage/project/EcoGenetics/BACKUP/HiC/ApiVir/API_VIR_L1_1.fq.gz
+- /faststorage/project/EcoGenetics/BACKUP/HiC/ApiVir/API_VIR_L1_2.fq.gz
+# Path to draft genome file.
+draft_genome_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/beetles/Apion_virens/draft_assembly/purge_dups_primary/01/ApiVir.purged.fa
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/beetles
+# 3D-DNA settings.
+input_size: 10000 # (Default 15000)
+number_of_edit_rounds: 6 # (Default 2)

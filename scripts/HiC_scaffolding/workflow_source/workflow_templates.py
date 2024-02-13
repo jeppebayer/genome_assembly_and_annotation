@@ -393,7 +393,7 @@ def setup_for_juicer(hic_sequence_files: list, draft_genome_assembly_file: str, 
 	options = {
 		'cores': 1,
 		'memory': '20g',
-		'walltime': '05:00:00'
+		'walltime': '12:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -504,7 +504,7 @@ def juicer_pipeline(draft_genome_assembly_file: str, chrom_sizes_file: str, outp
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def assembly_3ddna(draft_assembly_file: str, purged_nodups_file: str, output_directory: str, working_directory: str):
+def assembly_3ddna(draft_assembly_file: str, purged_nodups_file: str, working_directory: str, input_size: int = 15000, edit_rounds: int = 3):
 	"""
 	Template: 3D de novo assembly
 	
@@ -523,7 +523,7 @@ def assembly_3ddna(draft_assembly_file: str, purged_nodups_file: str, output_dir
 			   'final_cprops': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.cprops',
 			   'final_hic': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.hic'}
 	options = {
-		'cores': 30,
+		'cores': 40,
 		'memory': '80g',
 		'walltime': '48:00:00'
 	}
@@ -537,12 +537,56 @@ def assembly_3ddna(draft_assembly_file: str, purged_nodups_file: str, output_dir
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/HiC_scaffolding/juicer/3ddna/tmp ] || mkdir -p {output_directory}/HiC_scaffolding/juicer/3ddna/tmp
+	[ -d {working_directory}/tmp ] || mkdir -p {working_directory}/tmp
 	
-	export _JAVA_OPTIONS="-Djava.io.tmpdir={output_directory}/HiC_scaffolding/juicer/3ddna/tmp -Xmx80G"
-	3d-dna -r 3 {draft_assembly_file} {purged_nodups_file}
+	export _JAVA_OPTIONS="-Djava.io.tmpdir={working_directory}/tmp -Xmx80G"
+
+	3d-dna \
+		--rounds {edit_rounds} \
+		--input {input_size} \
+		{draft_assembly_file} \
+		{purged_nodups_file}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def finalize_3ddna(output_directory: str, species_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {}
+	outputs = {}
+	options = {
+		'cores': n_cores,
+		'memory': 'memg',
+		'walltime': 'time'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate conda_env
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d directory ] || mkdir -p directory
+	
+	
+	
+	mv
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
