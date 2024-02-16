@@ -21,7 +21,10 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
     OUTPUT_DIR: str = config['output_directory_path']
     GENOME_ASSEMBLY: str = config['genome_assembly_file']
     RNA_READS: list = config['rna_sequence_files']
+    DATABASE: int = config['database']
     PROTEIN_DB: str = config['protein_database_file']
+    REFERENCE: str = config['referene_genome_file']
+    GTF: str = config['gtf_genome_annotation_file']
     
     # --------------------------------------------------
     #                  Workflow
@@ -52,15 +55,38 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
         )
     )
 
-    braker = gwf.target_from_template(
-        name=f'{species_abbreviation(SPECIES_NAME)}_braker3',
-        template=braker3(
-            genome_assembly_file=GENOME_ASSEMBLY,
-            rna_alignment_bam=rna_alignment.outputs['bam'],
-            protein_database_file=PROTEIN_DB,
-            output_directory=top_dir,
-            species_name=SPECIES_NAME
+    if DATABASE == 0:
+        braker_no_db
+
+    elif DATABASE == 1:
+        braker_db_exists = gwf.target_from_template(
+            name=f'{species_abbreviation(SPECIES_NAME)}_braker3',
+            template=braker3(
+                genome_assembly_file=GENOME_ASSEMBLY,
+                rna_alignment_bam=rna_alignment.outputs['bam'],
+                protein_database_file=PROTEIN_DB,
+                output_directory=top_dir,
+                species_name=SPECIES_NAME
+            )
         )
-    )
+    elif DATABASE == 2:
+        make_database = gwf.target_from_template(
+            name=f'Create_protein_database',
+            template=make_protein_db(
+                reference_genome_file=REFERENCE,
+                gtf_annotation_file=GTF,
+                output_directory=OUTPUT_DIR
+            )
+        )
+        braker_db_exists_not = gwf.target_from_template(
+            name=f'{species_abbreviation(SPECIES_NAME)}_braker3',
+            template=braker3(
+                genome_assembly_file=GENOME_ASSEMBLY,
+                rna_alignment_bam=rna_alignment.outputs['bam'],
+                protein_database_file=make_database.outputs['proteins'],
+                output_directory=top_dir,
+                species_name=SPECIES_NAME
+            )
+        )
 
     return gwf

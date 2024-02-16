@@ -7,8 +7,7 @@ genome_assembly_file:
 # List of path to RNA sequence files (read 1 & read 2)
 rna_sequence_files:
 - 
-- 
-# Directory for intermediary files.
-working_directory_path: 
+# Path to protein database file in FASTA format.
+protein_database_file: 
 # Directory for final output files.
 output_directory_path: 

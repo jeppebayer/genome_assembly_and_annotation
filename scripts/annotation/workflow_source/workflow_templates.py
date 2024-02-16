@@ -135,6 +135,57 @@ def star_alignment(rna_sequence_files: list, star_index_directory: str, output_d
 	"""
 	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
 
+def make_protein_db(reference_genome_file: str, gtf_annotation_file: str, output_directory: str):
+	"""
+	Template: Make protein database file in :format:`FASTA` format from reference genome and :format:`GTF` annotation file.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'reference': reference_genome_file,
+		   	  'gtf':gtf_annotation_file}
+	outputs = {'proteins': f'{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.fasta'}
+	protect = outputs['proteins']
+	options = {
+		'cores': 1,
+		'memory': '20g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate assembly
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/proteinDB ] || mkdir -p {output_directory}/proteinDB
+	
+	agat_sp_extract_sequences.pl -g {gtf_annotation_file} -f {reference_genome_file} -t cds -p -o {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta
+	
+	awk \
+		'{{if ($0 ~ /^>/)
+			{{gsub(/ /, ";")}}
+		gsub(/\s$/, "");
+		print $0}}' \
+		{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta \
+		> {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.prog.fasta
+	
+	rm {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta
+	mv {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.prog.fasta {outputs['proteins']}
+	rm *.agat.log
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
 def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
 	"""
 	Template: Runs BRAKER3 which uses both RNA-sequence data and a protein database to predict genes function and annotate genome assembly.

@@ -652,7 +652,13 @@ def purge_dups_3_purge_duplicates(pb_stat_file: str, pb_base_cov_file: str, self
 		{outputs['dups']} \
 		{genome_assembly_file}
 
-	mv {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog.purged.fa {outputs['purged']}
+	seqkit seq \
+		-j {options['cores']} \
+		-w 60 \
+		-o {outputs['purged']} \
+		{output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog.purged.fa
+
+	rm {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog.purged.fa
 	mv {output_directory}/draft_assembly/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog.hap.fa {outputs['hap']}
 	
 	awk \

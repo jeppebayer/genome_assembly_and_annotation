@@ -10,7 +10,5 @@ rna_sequence_files:
 - /faststorage/project/EcoGenetics/BACKUP/RNA_data/Orchesella_villosa/Ovil-RNA_R2_001.fastq.gz
 # Path to protein database file in FASTA format.
 protein_database_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/test_data/OrcCin.protein.nowhitespace.nostar.fa
-# Directory for intermediary files.
-working_directory_path: 
 # Directory for final output files.
 output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola

@@ -1,7 +1,7 @@
 # The name of the relevant project account.
 account: EcoGenetics
 # Name of species being analyzed
-species_name: Isotoma Viridis
+species_name: Isotoma viridis
 # Genome assembly files to be masked
 genome_assembly: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/steps/04_assembly/Isotoma_viridis/purge_dups/04/purged.fa
 # Repetitive region database file:

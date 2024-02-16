@@ -13,3 +13,6 @@ output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genom
 # 3D-DNA settings.
 input_size: 10000 # (Default 15000)
 number_of_edit_rounds: 6 # (Default 2)
+# Reviewed .assembly file generated from JuiceBox (can be left blank until a reviewed file has been produced).
+reviewed_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Entomobrya_nicoleti/HiC_scaffolding/juicer/3ddna_in10000_r6/finalize/purged.final.review.assembly
+number_of_chromosomes_to_keep: 7

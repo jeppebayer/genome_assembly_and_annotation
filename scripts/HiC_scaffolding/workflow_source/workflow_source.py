@@ -112,6 +112,8 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
     DRAFT_GENOME: str = config['draft_genome_file']
     INPUT_SIZE: int = config['input_size']
     EDIT_ROUDNS: int = config['number_of_edit_rounds']
+    REVIEW_FILE: str = config['reviewed_assembly_file']
+    CHROM_NUM: int= config['number_of_chromosomes_to_keep']
     
     # --------------------------------------------------
     #                  Workflow
@@ -125,6 +127,8 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
     os.makedirs(top_dir, exist_ok=True)
     assembly_3ddna_directory = f'{top_dir}/HiC_scaffolding/juicer/3ddna_in{INPUT_SIZE}_r{EDIT_ROUDNS}'
     os.makedirs(assembly_3ddna_directory, exist_ok=True)
+    assembly_3ddna_finalize_directory = f'{assembly_3ddna_directory}/finalize'
+    os.makedirs(assembly_3ddna_finalize_directory, exist_ok=True)
 
     setup = gwf.target_from_template(
         name=f'{species_abbreviation(SPECIES_NAME)}_juicer_setup',
@@ -149,11 +153,23 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
         name=f'{species_abbreviation(SPECIES_NAME)}_3d_dna',
         template=assembly_3ddna(
             draft_assembly_file=DRAFT_GENOME,
-            purged_nodups_file=juicer.outputs['nodups'],
+            merged_nodups_file=juicer.outputs['nodups'],
             working_directory=assembly_3ddna_directory,
             edit_rounds=EDIT_ROUDNS,
             input_size=INPUT_SIZE
         )
     )
+
+    if REVIEW_FILE:
+        finalize = gwf.target_from_template(
+            name=f'{species_abbreviation(SPECIES_NAME)}_finalize_assembly',
+            template=finalize_3ddna(
+                reviewed_assembly_file=REVIEW_FILE,
+                draft_assembly_file=DRAFT_GENOME,
+                merged_nodups_file=juicer.outputs['nodups'],
+                number_of_chromosomes=CHROM_NUM,
+                working_directory=assembly_3ddna_finalize_directory
+            )
+        )
 
     return gwf

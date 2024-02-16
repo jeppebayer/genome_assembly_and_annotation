@@ -504,7 +504,7 @@ def juicer_pipeline(draft_genome_assembly_file: str, chrom_sizes_file: str, outp
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def assembly_3ddna(draft_assembly_file: str, purged_nodups_file: str, working_directory: str, input_size: int = 15000, edit_rounds: int = 3):
+def assembly_3ddna(draft_assembly_file: str, merged_nodups_file: str, working_directory: str, input_size: int = 15000, edit_rounds: int = 3):
 	"""
 	Template: 3D de novo assembly
 	
@@ -516,7 +516,8 @@ def assembly_3ddna(draft_assembly_file: str, purged_nodups_file: str, working_di
 	:param
 	"""
 	working_dir = working_directory
-	inputs = {}
+	inputs = {'assembly': draft_assembly_file,
+		   	  'nodups': merged_nodups_file}
 	outputs = {'final_fasta': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.fasta',
 			   'final_asm': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.asm',
 			   'final_assembly': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.assembly',
@@ -545,16 +546,16 @@ def assembly_3ddna(draft_assembly_file: str, purged_nodups_file: str, working_di
 		--rounds {edit_rounds} \
 		--input {input_size} \
 		{draft_assembly_file} \
-		{purged_nodups_file}
+		{merged_nodups_file}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def finalize_3ddna(output_directory: str, species_name: str):
+def finalize_3ddna(reviewed_assembly_file: str, draft_assembly_file: str, merged_nodups_file: str, number_of_chromosomes: int, working_directory: str, post_review: str = '/home/jepe/miniconda3/envs/assembly/share/3d-dna/run-asm-pipeline-post-review.sh'):
 	"""
-	Template: template_description
+	Template: Finalizes draft assembly using reviewed :format:`assembly` file from :script:`JuiceBox`.
 	
 	Template I/O::
 	
@@ -563,30 +564,39 @@ def finalize_3ddna(output_directory: str, species_name: str):
 	
 	:param
 	"""
-	inputs = {}
-	outputs = {}
+	working_dir = working_directory
+	inputs = {'asm': reviewed_assembly_file,
+		   	  'assembly': draft_assembly_file,
+			  'nodups': merged_nodups_file}
+	outputs = {'fasta': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}_HiC.fasta',
+			   'asm': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}_HiC.assembly',
+			   'final_fasta': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.nodebris.fasta'}
 	options = {
-		'cores': n_cores,
-		'memory': 'memg',
-		'walltime': 'time'
+		'cores': 40,
+		'memory': '80g',
+		'walltime': '12:00:00'
 	}
 	spec = f"""
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate conda_env
+		source activate assembly
 	fi
 	
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d directory ] || mkdir -p directory
+	bash {post_review} --sort-output -s finalize -r {reviewed_assembly_file} {draft_assembly_file} {merged_nodups_file}
+
+	seqkit range \
+		-j {options['cores']} \
+		-r 1:{number_of_chromosomes} \
+		-o {working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.nodebris.prog.fasta \
+		{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}_HiC.fasta
 	
-	
-	
-	mv
+	mv {working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.nodebris.prog.fasta {outputs['final_fasta']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)

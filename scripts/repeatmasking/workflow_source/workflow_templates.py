@@ -116,7 +116,7 @@ def repeatmodeler(database: list, working_directory: str, species_name: str):
 		-LTRStruct \
 		-pa {int(options['cores']/4)}
 	
-	| seqkit \
+	seqkit \
 		fx2tab \
 		RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')}-families.fa \
 	| awk \
@@ -126,7 +126,7 @@ def repeatmodeler(database: list, working_directory: str, species_name: str):
 		tab2fx \
 		> {species_name.replace(' ', '_')}-families.prefix.prog.fa
 
-	| seqkit \
+	seqkit \
 		fx2tab \
 		{species_name.replace(' ', '_')}-families.prefix.prog.fa \
 	| awk \
@@ -135,7 +135,7 @@ def repeatmodeler(database: list, working_directory: str, species_name: str):
 		tab2fx
 		> {species_name.replace(' ', '_')}-families.prefix.unknown.prog.fa
 
-	| seqkit \
+	seqkit \
 		fx2tab \
 		{species_name.replace(' ', '_')}-families.prefix.prog.fa \
 	| awk \
@@ -372,6 +372,11 @@ def mask_assembly(genome_assembly_file: str, annotation_file: str, working_direc
 		-fo {species_abbreviation(species_name)}.softmasked.prog.fna
 
 	awk \
+		'{{gsub(/\s$/, ""); print $0}}' \
+		{species_abbreviation(species_name)}.softmasked.prog.fna \
+		> {species_abbreviation(species_name)}.softmasked.nowhitespace.prog.fna
+
+	awk \
 		-F "\\t" \
 		'BEGIN{{OFS = "\\t"}}
 		{{if ($0 ~ /^[^#]/)
@@ -380,7 +385,8 @@ def mask_assembly(genome_assembly_file: str, annotation_file: str, working_direc
 		{annotation_file} \
 		> {species_abbreviation(species_name)}.repeats.prog.bed
 	
-	mv {species_abbreviation(species_name)}.softmasked.prog.fna {outputs['masked']}
+	mv {species_abbreviation(species_name)}.softmasked.nowhitespace.prog.fna {outputs['masked']}
+	rm {species_abbreviation(species_name)}.softmasked.prog.fna
 	mv {species_abbreviation(species_name)}.repeats.prog.bed {outputs['bed']}
 	
 	echo "END: $(date)"
