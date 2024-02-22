@@ -128,7 +128,10 @@ def star_alignment(rna_sequence_files: list, star_index_directory: str, output_d
 		--outSAMtype BAM SortedByCoordinate \
 		--outSAMstrandField intronMotif \
 		--outSAMattrRGline ID:{species_abbreviation(species_name)}_RNA SM:{species_abbreviation(species_name)}_RNA \
-		--outTmpDir {output_directory}/tmp
+		--outTmpDir {output_directory}/tmp \
+		--outFilterScoreMinOverLread 0 \
+		--outFilterMatchNminOverLread 0 \
+		--outFilterMatchNmin 0
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -170,9 +173,7 @@ def make_protein_db(reference_genome_file: str, gtf_annotation_file: str, output
 	agat_sp_extract_sequences.pl -g {gtf_annotation_file} -f {reference_genome_file} -t cds -p -o {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta
 	
 	awk \
-		'{{if ($0 ~ /^>/)
-			{{gsub(/ /, ";")}}
-		gsub(/\s$/, "");
+		'{{gsub(/\s$/, "");
 		print $0}}' \
 		{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta \
 		> {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.prog.fasta
@@ -185,6 +186,14 @@ def make_protein_db(reference_genome_file: str, gtf_annotation_file: str, output
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+# awk \
+# 		'{{if ($0 ~ /^>/)
+# 			{{gsub(/ /, ";")}}
+# 		gsub(/\s$/, "");
+# 		print $0}}' \
+# 		{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta \
+# 		> {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.prog.fasta
 
 def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
 	"""

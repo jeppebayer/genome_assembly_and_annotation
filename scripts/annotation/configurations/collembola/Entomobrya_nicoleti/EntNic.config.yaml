@@ -3,7 +3,7 @@ account: EcoGenetics
 # Name of species being analyzed
 species_name: Entomobrya nicoleti
 # Path to genome assembly file.
-genome_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Entomobrya_nicoleti/HiC_scaffolding/juicer/3ddna_in10000_r6/finalize/purged.nodebris.fasta
+genome_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Entomobrya_nicoleti/repeatmasking/EntNic.softmasked.fna
 # List of path to RNA sequence files (read 1 & read 2).
 rna_sequence_files:
 - /faststorage/project/EcoGenetics/BACKUP/RNA_data/Entomobrya_nicoleti/ENTNIC_RNA_RDJ_1.fq.gz
