@@ -4,11 +4,17 @@ account: EcoGenetics
 species_name: Orchesella villosa
 # Path to genome assembly file.
 genome_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Orchesella_villosa/repeatmasking/OrcVil.softmasked.nowhitespace.fna
-# List of path to RNA sequence files (read 1 & read 2).
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
+# Use only RNA data (1), use use only protein database file (2), or both RNA data and protein database (3). (1 | 2 | 3).
+braker_setting: 3
+# 0 & 1: List of path to RNA sequence files (read 1 & read 2).
 rna_sequence_files:
 - /faststorage/project/EcoGenetics/BACKUP/RNA_data/Orchesella_villosa/Ovil-RNA_R1_001.fastq.gz
 - /faststorage/project/EcoGenetics/BACKUP/RNA_data/Orchesella_villosa/Ovil-RNA_R2_001.fastq.gz
-# Path to protein database file in FASTA format.
+# 1 & 2: Path to protein database file in FASTA format.
 protein_database_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/test_data/OrcCin.protein.nowhitespace.nostar.fa
-# Directory for final output files.
-output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
+# Alternative if desired database does not exist.
+# 1 & 2: Make protein database file from genome and annotation file.
+referene_genome_file: 
+gtf_genome_annotation_file:

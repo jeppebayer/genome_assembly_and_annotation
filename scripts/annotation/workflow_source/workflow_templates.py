@@ -195,9 +195,123 @@ def make_protein_db(reference_genome_file: str, gtf_annotation_file: str, output
 # 		{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta \
 # 		> {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.prog.fasta
 
+def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
+	"""
+	Template: Runs BRAKER3 using RNA-sequence data to predict genes function and annotate genome assembly.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'assembly': genome_assembly_file,
+		   	  'rna': rna_alignment_bam}
+	outputs = {'gtf': f'{output_directory}/braker1/braker.gtf',
+			   'coding': f'{output_directory}/braker1/braker.codingseq',
+			   'aa': f'{output_directory}/braker1/braker.aa',
+			   'evidence': f'{output_directory}/braker1/hintsfile.gff',
+			   'cite': f'{output_directory}/braker1/what-to-cite.txt',
+			   'other': [f'{output_directory}/braker1/genome_header.map',
+						 f'{output_directory}/braker1/braker.log']}
+	protect = [outputs['gtf'], outputs['coding'], outputs['aa'], outputs['evidence']]
+	options = {
+		'cores': 30,
+		'memory': '300g',
+		'walltime': '10:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate annotation
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+
+	if [ -d {output_directory}/braker1 ]; then
+		rm -rf {output_directory}/braker1
+		mkdir -p {output_directory}/braker1
+	else
+		mkdir -p {output_directory}/braker1
+	fi
+	
+	braker.pl \
+		--genome {genome_assembly_file} \
+		--bam {rna_alignment_bam} \
+		--species {species_name.replace(' ', '_')} \
+		--threads {options['cores']} \
+		--workingdir {output_directory}/braker1 \
+		--GENEMARK_PATH {genemark} \
+		--PROTHINT_PATH {prothint}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+def braker2(genome_assembly_file: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
+	"""
+	Template: Runs BRAKER3 using a protein database to predict genes function and annotate genome assembly.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'assembly': genome_assembly_file,
+			  'protein': protein_database_file}
+	outputs = {'gtf': f'{output_directory}/braker2/braker.gtf',
+			   'coding': f'{output_directory}/braker2/braker.codingseq',
+			   'aa': f'{output_directory}/braker2/braker.aa',
+			   'evidence': f'{output_directory}/braker2/hintsfile.gff',
+			   'cite': f'{output_directory}/braker2/what-to-cite.txt',
+			   'other': [f'{output_directory}/braker2/genome_header.map',
+						 f'{output_directory}/braker2/braker.log']}
+	protect = [outputs['gtf'], outputs['coding'], outputs['aa'], outputs['evidence']]
+	options = {
+		'cores': 30,
+		'memory': '300g',
+		'walltime': '10:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate annotation
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+
+	if [ -d {output_directory}/braker2 ]; then
+		rm -rf {output_directory}/braker2
+		mkdir -p {output_directory}/braker2
+	else
+		mkdir -p {output_directory}/braker2
+	fi
+	
+	braker.pl \
+		--genome {genome_assembly_file} \
+		--prot_seq {protein_database_file} \
+		--species {species_name.replace(' ', '_')} \
+		--threads {options['cores']} \
+		--workingdir {output_directory}/braker2 \
+		--GENEMARK_PATH {genemark} \
+		--PROTHINT_PATH {prothint}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
 def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
 	"""
-	Template: Runs BRAKER3 which uses both RNA-sequence data and a protein database to predict genes function and annotate genome assembly.
+	Template: Runs BRAKER3 using both RNA-sequence data and a protein database to predict genes function and annotate genome assembly.
 	
 	Template I/O::
 	
@@ -216,6 +330,7 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 			   'cite': f'{output_directory}/braker3/what-to-cite.txt',
 			   'other': [f'{output_directory}/braker3/genome_header.map',
 						 f'{output_directory}/braker3/braker.log']}
+	protect = [outputs['gtf'], outputs['coding'], outputs['aa'], outputs['evidence']]
 	options = {
 		'cores': 30,
 		'memory': '300g',
@@ -251,4 +366,4 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)

@@ -4,17 +4,18 @@ account: EcoGenetics
 species_name: Entomobrya nicoleti
 # Path to genome assembly file.
 genome_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Entomobrya_nicoleti/repeatmasking/EntNic.softmasked.fna
-# List of path to RNA sequence files (read 1 & read 2).
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
+# Use only RNA data (1), use use only protein database file (2), or both RNA data and protein database (3). (1 | 2 | 3).
+braker_setting: 2
+# 0 & 1: List of path to RNA sequence files (read 1 & read 2).
 rna_sequence_files:
 - /faststorage/project/EcoGenetics/BACKUP/RNA_data/Entomobrya_nicoleti/ENTNIC_RNA_RDJ_1.fq.gz
 - /faststorage/project/EcoGenetics/BACKUP/RNA_data/Entomobrya_nicoleti/ENTNIC_RNA_RDJ_2.fq.gz
-# Directory for final output files.
-output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
-# Don't use, supply or make protein database file (0, 1 or 2).
-database: 1
-# 1: Path to protein database file in FASTA format.
+# 1 & 2: Path to protein database file in FASTA format.
 protein_database_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/proteinDB/EG_OrcVil_14022024_genomic.protein.fasta
-# 2: Make protein database file from genome and annotation file.
+# Alternative if desired database does not exist.
+# 1 & 2: Make protein database file from genome and annotation file.
 referene_genome_file: 
 gtf_genome_annotation_file: 
 

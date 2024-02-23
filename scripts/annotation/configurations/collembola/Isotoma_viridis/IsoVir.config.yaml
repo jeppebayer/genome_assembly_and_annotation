@@ -3,17 +3,18 @@ account: EcoGenetics
 # Name of species being analyzed
 species_name: Isotoma viridis
 # Path to genome assembly file.
-genome_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Isotoma_Viridis/repeatmasking/IsoVir.softmasked.fna
-# List of path to RNA sequence files (read 1 & read 2).
+genome_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Isotoma_viridis/repeatmasking/IsoVir.softmasked.fna
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
+# Use only RNA data (1), use use only protein database file (2), or both RNA data and protein database (3). (1 | 2 | 3).
+braker_setting: 3
+# 0 & 1: List of path to RNA sequence files (read 1 & read 2).
 rna_sequence_files:
 - /faststorage/project/EcoGenetics/BACKUP/RNA_data/Isotoma_viridis/ISOVIR-RNA_R1_001.fastq.gz
 - /faststorage/project/EcoGenetics/BACKUP/RNA_data/Isotoma_viridis/ISOVIR-RNA_R2_001.fastq.gz
-# Don't use, supply or make protein database file (0, 1 or 2).
-database: 2
-# 1: Path to protein database file in FASTA format.
+# 1 & 2: Path to protein database file in FASTA format.
 protein_database_file: 
-# 2: Make protein database file from genome and annotation file.
+# Alternative if desired database does not exist.
+# 1 & 2: Make protein database file from genome and annotation file.
 referene_genome_file: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Orchesella_villosa/EG_OrcVil_14022024_genomic.fasta
 gtf_genome_annotation_file: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Orchesella_villosa/annotation/EG_OrcVil_14022024_genomic.gtf
-# Directory for final output files.
-output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
