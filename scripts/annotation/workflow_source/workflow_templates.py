@@ -209,6 +209,7 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 	inputs = {'assembly': genome_assembly_file,
 		   	  'rna': rna_alignment_bam}
 	outputs = {'gtf': f'{output_directory}/braker1/braker.gtf',
+			   'bed': f'{output_directory}/braker1/genes.bed',
 			   'coding': f'{output_directory}/braker1/braker.codingseq',
 			   'aa': f'{output_directory}/braker1/braker.aa',
 			   'evidence': f'{output_directory}/braker1/hintsfile.gff',
@@ -247,6 +248,15 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 		--GENEMARK_PATH {genemark} \
 		--PROTHINT_PATH {prothint}
 	
+	awk \
+		'BEGIN{{FS=OFS="\\t"}} 
+		{{if ($3 == "gene") 
+			{{print $1, $4-1, $5}}}}' \
+		{outputs['gtf']} \
+		> {output_directory}/braker1/genes.prog.bed
+	
+	mv {output_directory}/braker1/genes.prog.bed {outputs['bed']}
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
@@ -266,6 +276,7 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 	inputs = {'assembly': genome_assembly_file,
 			  'protein': protein_database_file}
 	outputs = {'gtf': f'{output_directory}/braker2/braker.gtf',
+			   'bed': f'{output_directory}/braker1/genes.bed',
 			   'coding': f'{output_directory}/braker2/braker.codingseq',
 			   'aa': f'{output_directory}/braker2/braker.aa',
 			   'evidence': f'{output_directory}/braker2/hintsfile.gff',
@@ -304,6 +315,15 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 		--GENEMARK_PATH {genemark} \
 		--PROTHINT_PATH {prothint}
 	
+	awk \
+		'BEGIN{{FS=OFS="\\t"}} 
+		{{if ($3 == "gene") 
+			{{print $1, $4-1, $5}}}}' \
+		{outputs['gtf']} \
+		> {output_directory}/braker1/genes.prog.bed
+	
+	mv {output_directory}/braker2/genes.prog.bed {outputs['bed']}
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
@@ -324,6 +344,7 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 		   	  'rna': rna_alignment_bam,
 			  'protein': protein_database_file}
 	outputs = {'gtf': f'{output_directory}/braker3/braker.gtf',
+			   'bed': f'{output_directory}/braker1/genes.bed',
 			   'coding': f'{output_directory}/braker3/braker.codingseq',
 			   'aa': f'{output_directory}/braker3/braker.aa',
 			   'evidence': f'{output_directory}/braker3/hintsfile.gff',
@@ -363,6 +384,15 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 		--GENEMARK_PATH {genemark} \
 		--PROTHINT_PATH {prothint}
 	
+	awk \
+		'BEGIN{{FS=OFS="\\t"}} 
+		{{if ($3 == "gene") 
+			{{print $1, $4-1, $5}}}}' \
+		{outputs['gtf']} \
+		> {output_directory}/braker1/genes.prog.bed
+	
+	mv {output_directory}/braker3/genes.prog.bed {outputs['bed']}
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
