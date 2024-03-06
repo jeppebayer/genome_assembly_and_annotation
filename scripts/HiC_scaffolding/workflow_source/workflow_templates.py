@@ -158,7 +158,7 @@ def mark_duplicates_picard(alignment_bam_file: str, output_directory: str):
 	
 	[ -d {output_directory}/HiC_scaffolding/YaHS/alignment/tmp ] || mkdir -p {output_directory}/HiC_scaffolding/YaHS/alignment/tmp
 	
-	export _JAVA_OPTIONS="-Xmx100G"
+	export _JAVA_OPTIONS="-Xmx{options['memory']}"
 
 	picard MarkDuplicates \
 		--INPUT {alignment_bam_file} \
@@ -540,7 +540,7 @@ def assembly_3ddna(draft_assembly_file: str, merged_nodups_file: str, working_di
 	
 	[ -d {working_directory}/tmp ] || mkdir -p {working_directory}/tmp
 	
-	export _JAVA_OPTIONS="-Djava.io.tmpdir={working_directory}/tmp -Xmx80G"
+	export _JAVA_OPTIONS="-Djava.io.tmpdir={working_directory}/tmp -Xmx{options['memory']}"
 
 	3d-dna \
 		--rounds {edit_rounds} \
