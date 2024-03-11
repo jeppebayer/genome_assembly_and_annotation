@@ -170,7 +170,12 @@ def make_protein_db(reference_genome_file: str, gtf_annotation_file: str, output
 	
 	[ -d {output_directory}/proteinDB ] || mkdir -p {output_directory}/proteinDB
 	
-	agat_sp_extract_sequences.pl -g {gtf_annotation_file} -f {reference_genome_file} -t cds -p -o {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta
+	agat_sp_extract_sequences.pl \
+		--gff {gtf_annotation_file} \
+		--fasta {reference_genome_file} \
+		--type cds \
+		--protein \
+		--output {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta
 	
 	awk \
 		'{{gsub(/\s$/, "");
