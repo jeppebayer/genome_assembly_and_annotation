@@ -14,4 +14,5 @@ output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genom
 input_size: 15000 # (Default 15000)
 number_of_edit_rounds: 3 # (Default 2)
 # Reviewed .assembly file generated from JuiceBox (can be left blank until a reviewed file has been produced).
-reviewed_assembly_file: 
+reviewed_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/museomics/Gonepteryx_rhamni/HiC_scaffolding/juicer/3ddna_in15000_r3/finalize/purged.final.review.assembly
+number_of_chromosomes_to_keep: 31
