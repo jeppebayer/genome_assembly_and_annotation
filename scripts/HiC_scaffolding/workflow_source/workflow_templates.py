@@ -586,7 +586,12 @@ def finalize_3ddna(reviewed_assembly_file: str, draft_assembly_file: str, merged
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	bash {post_review} --sort-output -s finalize -r {reviewed_assembly_file} {draft_assembly_file} {merged_nodups_file}
+	bash {post_review} \
+		--sort-output \
+		-s finalize \
+		-r {reviewed_assembly_file} \
+		{draft_assembly_file} \
+		{merged_nodups_file}
 
 	seqkit range \
 		-j {options['cores']} \
