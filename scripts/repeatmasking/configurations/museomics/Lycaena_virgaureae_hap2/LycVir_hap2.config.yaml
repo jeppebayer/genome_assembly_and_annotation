@@ -1,11 +1,11 @@
 # The name of the relevant project account.
 account: EcoGenetics
 # Name of species being analyzed
-species_name: Gonepteryx rhamni
+species_name: Lycaena virgaureae
 # Alternative name of created folder (To be used if something deviating from the automatically generated name is desired)
-alternative_folder_name:
+alternative_folder_name: Lycaena_virgaureae_haplotype2
 # Genome assembly files to be masked
-genome_assembly: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/museomics/Gonepteryx_rhamni/HiC_scaffolding/juicer/3ddna_in15000_r3/finalize/purged.nodebris.fasta
+genome_assembly: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Lycaena_virgaureae/LycVir_hap2_wrapped.FINAL.fasta
 # Repetitive region database file:
 repeat_database: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/databases/RepBase/giri_repbase/RepBaseCustom15.02.fasta/Arthropoda.rep
 # Directory for intermediary files.

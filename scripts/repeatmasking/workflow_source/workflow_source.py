@@ -22,6 +22,7 @@ def repeat_masking_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     REPEAT_DATABASE: str = config['repeat_database']
     WORKING_DIR: str = config['working_directory_path']
     OUTPUT_DIR: str = config['output_directory_path']
+    ALT_NAME: str = config['alternative_folder_name']
     
     # --------------------------------------------------
     #                  Workflow
@@ -31,7 +32,7 @@ def repeat_masking_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         defaults={'account': ACCOUNT}
     )
     
-    top_dir = f'{WORKING_DIR}/{SPECIES_NAME.replace(" ", "_")}/repeatmasking'
+    top_dir = f'{WORKING_DIR}/{ALT_NAME.replace(" ", "_")}/repeatmasking' if ALT_NAME else f'{WORKING_DIR}/{SPECIES_NAME.replace(" ", "_")}/repeatmasking'
     repeatmodeler_dir = f'{top_dir}/RepeatModeler'
     repeatmodeler_db_dir = f'{repeatmodeler_dir}/RM_DB_{SPECIES_NAME.replace(" ", "_")}'
     repeatmasker_dir = f'{top_dir}/RepeatMasker'
