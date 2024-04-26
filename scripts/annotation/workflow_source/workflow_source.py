@@ -25,6 +25,7 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
     PROTEIN_DB: str = config['protein_database_file']
     REFERENCE: str = config['referene_genome_file']
     GTF: str = config['gtf_genome_annotation_file']
+    ALT_NAME: str = config['alternative_folder_name']
     
     # --------------------------------------------------
     #                  Workflow
@@ -34,7 +35,7 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
         defaults={'account': ACCOUNT}
     )
     
-    top_dir = f'{OUTPUT_DIR}/{SPECIES_NAME.replace(" ", "_")}/annotation'
+    top_dir = f'{OUTPUT_DIR}/{ALT_NAME.replace(" ", "_")}/annotation' if ALT_NAME else f'{OUTPUT_DIR}/{SPECIES_NAME.replace(" ", "_")}/annotation'
     # os.makedirs(top_dir, exist_ok=True)
 
     if BRAKER_SETTING == 1 or BRAKER_SETTING == 3:
