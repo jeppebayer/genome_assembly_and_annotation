@@ -65,7 +65,7 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
                 genome_assembly_file=GENOME_ASSEMBLY,
                 rna_alignment_bam=rna_alignment.outputs['bam'],
                 output_directory=top_dir,
-                species_name=SPECIES_NAME
+                species_name=ALT_NAME if ALT_NAME else SPECIES_NAME
             )
         )
 
@@ -88,7 +88,7 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
                 genome_assembly_file=GENOME_ASSEMBLY,
                 protein_database_file=PROTEIN_DB,
                 output_directory=top_dir,
-                species_name=SPECIES_NAME
+                species_name=ALT_NAME if ALT_NAME else SPECIES_NAME
             )
         )
 
@@ -112,7 +112,7 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
                 rna_alignment_bam=rna_alignment.outputs['bam'],
                 protein_database_file=PROTEIN_DB,
                 output_directory=top_dir,
-                species_name=SPECIES_NAME
+                species_name=ALT_NAME if ALT_NAME else SPECIES_NAME
             )
         )
     # elif DATABASE == 2:

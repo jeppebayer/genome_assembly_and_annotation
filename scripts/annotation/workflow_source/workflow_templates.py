@@ -1,6 +1,7 @@
 #!/bin/env python3
 from gwf import AnonymousTarget
 import os, glob
+from datetime import date
 
 ########################## Functions ##########################
 
@@ -27,7 +28,6 @@ def star_index(genome_assembly_file: str, output_directory: str):
 	
 	:param
 	"""
-	working_dir = output_directory
 	inputs = {'assembly': genome_assembly_file}
 	outputs = {'indices': [f'{output_directory}/indices/chrLength.txt',
 						   f'{output_directory}/indices/chrName.txt',
@@ -56,6 +56,7 @@ def star_index(genome_assembly_file: str, output_directory: str):
 	[ -d {output_directory}/indices ] || mkdir -p {output_directory}/indices
 	[ -d {output_directory}/tmp ] && rm -rf {output_directory}/tmp
 	[ "$(ls -A {output_directory}/indices)" ] || rm -rf {output_directory}/indices/*
+	cd {output_directory}
 	
 	salength=$(awk 'BEGIN{{genome_length = 0}} {{if ($0 ~ /[^>]/) {{genome_length += length($0) - 1}}}} END{{alt = int(((log(genome_length) / log(2)) / 2) - 1); if (alt < 14) {{print alt}} else {{print 14}}}}' {genome_assembly_file})
 
@@ -72,7 +73,7 @@ def star_index(genome_assembly_file: str, output_directory: str):
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 def star_alignment(rna_sequence_files: list, star_index_directory: str, output_directory: str, species_name: str):
 	"""
@@ -200,7 +201,7 @@ def make_protein_db(reference_genome_file: str, gtf_annotation_file: str, output
 # 		{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta \
 # 		> {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.prog.fasta
 
-def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
+def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin/gmes', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
 	"""
 	Template: Runs BRAKER3 using RNA-sequence data to predict genes function and annotate genome assembly.
 	
@@ -247,7 +248,7 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 	braker.pl \
 		--genome {genome_assembly_file} \
 		--bam {rna_alignment_bam} \
-		--species {species_name.replace(' ', '_')} \
+		--species {species_name.replace(' ', '_')}_{date.today().day}-{date.today().month}-{date.today().year} \
 		--threads {options['cores']} \
 		--workingdir {output_directory}/braker1 \
 		--GENEMARK_PATH {genemark} \
@@ -267,7 +268,7 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def braker2(genome_assembly_file: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
+def braker2(genome_assembly_file: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin/gmes', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
 	"""
 	Template: Runs BRAKER3 using a protein database to predict genes function and annotate genome assembly.
 	
@@ -281,7 +282,7 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 	inputs = {'assembly': genome_assembly_file,
 			  'protein': protein_database_file}
 	outputs = {'gtf': f'{output_directory}/braker2/braker.gtf',
-			   'bed': f'{output_directory}/braker1/genes.bed',
+			   'bed': f'{output_directory}/braker2/genes.bed',
 			   'coding': f'{output_directory}/braker2/braker.codingseq',
 			   'aa': f'{output_directory}/braker2/braker.aa',
 			   'evidence': f'{output_directory}/braker2/hintsfile.gff',
@@ -311,10 +312,12 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 		mkdir -p {output_directory}/braker2
 	fi
 	
+	[ -e  ]
+
 	braker.pl \
 		--genome {genome_assembly_file} \
 		--prot_seq {protein_database_file} \
-		--species {species_name.replace(' ', '_')} \
+		--species {species_name.replace(' ', '_')}_{date.today().day}-{date.today().month}-{date.today().year} \
 		--threads {options['cores']} \
 		--workingdir {output_directory}/braker2 \
 		--GENEMARK_PATH {genemark} \
@@ -325,7 +328,7 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 		{{if ($3 == "gene") 
 			{{print $1, $4-1, $5}}}}' \
 		{outputs['gtf']} \
-		> {output_directory}/braker1/genes.prog.bed
+		> {output_directory}/braker2/genes.prog.bed
 	
 	mv {output_directory}/braker2/genes.prog.bed {outputs['bed']}
 
@@ -334,7 +337,7 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
+def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin/gmes', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
 	"""
 	Template: Runs BRAKER3 using both RNA-sequence data and a protein database to predict genes function and annotate genome assembly.
 	
@@ -349,7 +352,7 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 		   	  'rna': rna_alignment_bam,
 			  'protein': protein_database_file}
 	outputs = {'gtf': f'{output_directory}/braker3/braker.gtf',
-			   'bed': f'{output_directory}/braker1/genes.bed',
+			   'bed': f'{output_directory}/braker3/genes.bed',
 			   'coding': f'{output_directory}/braker3/braker.codingseq',
 			   'aa': f'{output_directory}/braker3/braker.aa',
 			   'evidence': f'{output_directory}/braker3/hintsfile.gff',
@@ -383,7 +386,7 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 		--genome {genome_assembly_file} \
 		--bam {rna_alignment_bam} \
 		--prot_seq {protein_database_file} \
-		--species {species_name.replace(' ', '_')} \
+		--species {species_name.replace(' ', '_')}_{date.today().day}-{date.today().month}-{date.today().year} \
 		--threads {options['cores']} \
 		--workingdir {output_directory}/braker3 \
 		--GENEMARK_PATH {genemark} \
@@ -394,7 +397,7 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 		{{if ($3 == "gene") 
 			{{print $1, $4-1, $5}}}}' \
 		{outputs['gtf']} \
-		> {output_directory}/braker1/genes.prog.bed
+		> {output_directory}/braker3/genes.prog.bed
 	
 	mv {output_directory}/braker3/genes.prog.bed {outputs['bed']}
 

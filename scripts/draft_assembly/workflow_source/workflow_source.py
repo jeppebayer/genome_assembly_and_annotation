@@ -19,7 +19,7 @@ def draft_assembly_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     ACCOUNT: str = config['account']
     SPECIES_NAME: str = config['species_name']
     OUTPUT_DIR: str = config['output_directory_path']
-    HIFI_SEQ: str = config['pacbio_hifi_sequence_file']
+    HIFI_SEQ: list = config['pacbio_hifi_sequence_files']
     USE_HIC: int = config['use_hic_data']
     if USE_HIC == 1 or USE_HIC == 3:
         HIC_READS: list = config['hic_sequence_files']
@@ -34,14 +34,14 @@ def draft_assembly_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         defaults={'account': ACCOUNT}
     )
     
-    top_dir = f'{OUTPUT_DIR}/{SPECIES_NAME.replace(" ", "_")}'
-    os.makedirs(top_dir, exist_ok=True)
+    top_dir = f'{OUTPUT_DIR}/{SPECIES_NAME.replace(" ", "_")}/draft_assembly'
 
     remove_adapters = gwf.target_from_template(
         name=f'{species_abbreviation(SPECIES_NAME)}_adapterremoval',
         template=hifiadapterfilt(
-            pacbio_hifi_file=HIFI_SEQ,
+            pacbio_hifi_files=HIFI_SEQ,
             output_directory=top_dir,
+            species_name = SPECIES_NAME
         )
     )
     
@@ -74,7 +74,7 @@ def draft_assembly_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
                 name=f'{species_abbreviation(SPECIES_NAME)}_primary_pdups_s1_r{i:02}',
                 template=purge_dups_1_map_hifi_to_genome(
                     gemone_assembly_file=in_file,
-                    hifi_sequence_file=HIFI_SEQ,
+                    hifi_sequence_file=remove_adapters.outputs['filt'],
                     output_directory=top_dir,
                     species_name=SPECIES_NAME,
                     directory_addition='primary',
@@ -118,7 +118,7 @@ def draft_assembly_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         hifiasm_hic_assembly = gwf.target_from_template(
             name=f'{species_abbreviation(SPECIES_NAME)}_hifiasm_hic',
             template=hifiasm_hic(
-                hifi_sequence_file=HIFI_SEQ,
+                hifi_sequence_file=remove_adapters.outputs['filt'],
                 hic_sequence_files=HIC_READS,
                 output_directory=top_dir,
                 species_name=SPECIES_NAME
@@ -142,7 +142,7 @@ def draft_assembly_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
                 name=f'{species_abbreviation(SPECIES_NAME)}_hic_pdups_s1_r{i:02}',
                 template=purge_dups_1_map_hifi_to_genome(
                     gemone_assembly_file=in_file,
-                    hifi_sequence_file=HIFI_SEQ,
+                    hifi_sequence_file=remove_adapters.outputs['filt'],
                     output_directory=top_dir,
                     species_name=SPECIES_NAME,
                     directory_addition='hic',
