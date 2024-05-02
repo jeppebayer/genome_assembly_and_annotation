@@ -113,7 +113,7 @@ def hifiasm_primary(hifi_sequence_file: str, output_directory: str, species_name
 	protect = [outputs['fasta'], outputs['primary'][0], outputs['primary'][1], outputs['primary'][2]]
 	options = {
 		'cores': 32,
-		'memory': '100g',
+		'memory': '300g',
 		'walltime': '24:00:00'
 	}
 	spec = f"""
@@ -231,7 +231,7 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 	protect = outputs['fasta'] + outputs['hap1'] + outputs['hap2']
 	options = {
 		'cores': 32,
-		'memory': '100g',
+		'memory': '300g',
 		'walltime': '24:00:00'
 	}
 	spec = f"""
