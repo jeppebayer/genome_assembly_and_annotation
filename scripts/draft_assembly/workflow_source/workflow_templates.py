@@ -114,7 +114,7 @@ def hifiasm_primary(hifi_sequence_file: str, output_directory: str, species_name
 	options = {
 		'cores': 32,
 		'memory': '300g',
-		'walltime': '24:00:00'
+		'walltime': '48:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -232,7 +232,7 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 	options = {
 		'cores': 32,
 		'memory': '300g',
-		'walltime': '24:00:00'
+		'walltime': '48:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -413,6 +413,8 @@ def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_p
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
+	cd {os.path.dirname(genome_assembly_file)}
+
 	busco \
 		--cpu {options['cores']} \
 		--force \
@@ -425,6 +427,8 @@ def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_p
 		--tar \
 		--offline
 	
+	mv busco_*.log busco_{os.path.basename(genome_assembly_file)}/
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""

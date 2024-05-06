@@ -10,7 +10,7 @@ pacbio_hifi_sequence_files:
   - /faststorage/project/EcoGenetics/BACKUP/PacBio_HiFi/Bathyphantes_gracilis/BatGra_m64101e_240219_135040.hifi_reads.bc1009--bc1009.fastq.gz
   - /faststorage/project/EcoGenetics/BACKUP/PacBio_HiFi/Bathyphantes_gracilis/BatGra_m64101e_240223_114600.hifi_reads.bc1009--bc1009.fastq.gz
 # Use Hi-C data during assembly? (1 = Yes/2 = No/3 = Both).
-use_hic_data: 1
+use_hic_data: 3
 # List of Hi-C sequence files if avalable (optional).
 hic_sequence_files:
   - /faststorage/project/EcoGenetics/BACKUP/HiC/BatGra/Bagr_L1_1.fq.gz

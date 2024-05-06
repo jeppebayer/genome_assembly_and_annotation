@@ -1,0 +1,19 @@
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+species_name: Orchesella villosa
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
+# Path to PacBio sequence file.
+pacbio_hifi_sequence_files:
+  - /faststorage/project/EcoGenetics/BACKUP/PacBio_HiFi/Orchesella_villosa/OVIL_DNA_abm64101e_230127_095807.hifi_reads.fastq.gz
+# Use Hi-C data during assembly? (1 = Yes/2 = No/3 = Both).
+use_hic_data: 3
+# List of Hi-C sequence files if avalable (optional).
+hic_sequence_files:
+  - /faststorage/project/EcoGenetics/BACKUP/HiC/OrcVil/Orc_Vil_L1_1.fq.gz
+  - /faststorage/project/EcoGenetics/BACKUP/HiC/OrcVil/Orc_Vil_L1_2.fq.gz
+# Name of BUSCO lineage dataset to use for analysis.
+busco_dataset_name: arthropoda_odb10
+# Number of purge_dups rounds.
+purge_dups_rounds: 4
