@@ -426,8 +426,6 @@ def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_p
 		--lineage {busco_download_path}/lineages/{busco_dataset} \
 		--tar \
 		--offline
-	
-	mv busco_*.log busco_{os.path.basename(genome_assembly_file)}/
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
