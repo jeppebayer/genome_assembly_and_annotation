@@ -16,4 +16,4 @@ hic_sequence_files:
 # Name of BUSCO lineage dataset to use for analysis.
 busco_dataset_name: arthropoda_odb10
 # Number of purge_dups rounds.
-purge_dups_rounds: 4
+purge_dups_rounds: 6

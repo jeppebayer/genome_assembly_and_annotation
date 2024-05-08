@@ -1,0 +1,18 @@
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+species_name: Isotoma viridis
+# List of path to Hi-C sequence files.
+hic_sequence_files:
+- 
+- 
+# Path to draft genome file.
+draft_genome_file: 
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
+# 3D-DNA settings.
+input_size: 10000 # (Default 15000)
+number_of_edit_rounds: 6 # (Default 2)
+# Reviewed .assembly file generated from JuiceBox (can be left blank until a reviewed file has been produced).
+reviewed_assembly_file: 
+number_of_chromosomes_to_keep: 
