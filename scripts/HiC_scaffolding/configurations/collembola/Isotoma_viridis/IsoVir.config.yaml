@@ -4,10 +4,10 @@ account: EcoGenetics
 species_name: Isotoma viridis
 # List of path to Hi-C sequence files.
 hic_sequence_files:
-- 
-- 
+- /faststorage/project/EcoGenetics/BACKUP/HiC/IsoVir/IsoVir_Hi-C_L1_1.fq.gz
+- /faststorage/project/EcoGenetics/BACKUP/HiC/IsoVir/IsoVir_Hi-C_L1_2.fq.gz
 # Path to draft genome file.
-draft_genome_file: 
+draft_genome_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Isotoma_viridis/draft_assembly/purge_dups_primary/04/IsoVir.purged.fa
 # Directory for final output files.
 output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
 # 3D-DNA settings.
