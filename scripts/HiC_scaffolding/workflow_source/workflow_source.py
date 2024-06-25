@@ -15,12 +15,12 @@ def yahs_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')[0
     #                  Configuration
     # --------------------------------------------------
     
-    config = yaml.safe_load(open(config_file))
-    ACCOUNT: str = config['account']
-    SPECIES_NAME: str = config['species_name']
-    OUTPUT_DIR: str = config['output_directory_path']
-    HIC_READS: list = config['hic_sequence_files']
-    DRAFT_GENOME: str = config['draft_genome_file']
+    CONFIG = yaml.safe_load(open(config_file))
+    ACCOUNT: str = CONFIG['account']
+    SPECIES_NAME: str = CONFIG['species_name']
+    OUTPUT_DIR: str = CONFIG['output_directory_path']
+    HIC_READS: list = CONFIG['hic_sequence_files']
+    DRAFT_GENOME: str = CONFIG['draft_genome_file']
     
     # --------------------------------------------------
     #                  Workflow
@@ -104,16 +104,17 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
     #                  Configuration
     # --------------------------------------------------
     
-    config = yaml.safe_load(open(config_file))
-    ACCOUNT: str = config['account']
-    SPECIES_NAME: str = config['species_name']
-    OUTPUT_DIR: str = config['output_directory_path']
-    HIC_READS: list = config['hic_sequence_files']
-    DRAFT_GENOME: str = config['draft_genome_file']
-    INPUT_SIZE: int = config['input_size']
-    EDIT_ROUDNS: int = config['number_of_edit_rounds']
-    REVIEW_FILE: str = config['reviewed_assembly_file']
-    CHROM_NUM: int= config['number_of_chromosomes_to_keep']
+    CONFIG = yaml.safe_load(open(config_file))
+    ACCOUNT: str = CONFIG['account']
+    SPECIES_NAME: str = CONFIG['species_name']
+    OUTPUT_DIR: str = CONFIG['output_directory_path']
+    HIC_READS: list = CONFIG['hic_sequence_files']
+    DRAFT_GENOME: str = CONFIG['draft_genome_file']
+    INPUT_SIZE: int = CONFIG['input_size']
+    EDIT_ROUDNS: int = CONFIG['number_of_edit_rounds']
+    REVIEW_FILE: str = CONFIG['reviewed_assembly_file']
+    CHROM_NUM: int= CONFIG['number_of_chromosomes_to_keep']
+    BUSCO: str = CONFIG['busco_dataset_name']
     
     # --------------------------------------------------
     #                  Workflow
@@ -169,6 +170,22 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
                 merged_nodups_file=juicer.outputs['nodups'],
                 number_of_chromosomes=CHROM_NUM,
                 working_directory=assembly_3ddna_finalize_directory
+            )
+        )
+
+        busco = gwf.target_from_template(
+            name=f'{species_abbreviation(SPECIES_NAME)}_BUSCO_assembly',
+            template=busco_genome(
+                genome_assembly_file=finalize.outputs['final_fasta'],
+                busco_dataset=BUSCO
+            )
+        )
+
+        busco_with_debris = gwf.target_from_template(
+            name=f'{species_abbreviation(SPECIES_NAME)}_BUSCO_assembly_w_debris',
+            template=busco_genome(
+                genome_assembly_file=finalize.outputs['fasta'],
+                busco_dataset=BUSCO
             )
         )
 

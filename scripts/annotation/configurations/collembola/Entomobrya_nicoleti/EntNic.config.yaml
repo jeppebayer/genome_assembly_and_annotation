@@ -2,10 +2,14 @@
 account: EcoGenetics
 # Name of species being analyzed
 species_name: Entomobrya nicoleti
+# Alternative name of created folder (To be used if something deviating from the automatically generated name is desired)
+alternative_folder_name: 
 # Path to genome assembly file.
 genome_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Entomobrya_nicoleti/repeatmasking/EntNic.softmasked.fna
 # Directory for final output files.
 output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
+# Name of BUSCO lineage dataset to use for analysis.
+busco_dataset_name: arthropoda_odb10
 # Use only RNA data (1), use use only protein database file (2), or both RNA data and protein database (3). (1 | 2 | 3).
 braker_setting: 2
 # 0 & 1: List of path to RNA sequence files (read 1 & read 2).

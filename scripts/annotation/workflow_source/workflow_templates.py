@@ -405,3 +405,60 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+def busco_protein(genome_assembly_file: str, genome_annotation_gtf: str, busco_dataset: str, output_directory: str, busco_download_path: str = '/faststorage/project/EcoGenetics/databases/BUSCO'):
+	"""
+	Template: Runs BUSCO analysis on protein sequences from an annotated gene set.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'genome': genome_assembly_file,
+		   	  'annotation': genome_annotation_gtf}
+	outputs = {'protein': f'{output_directory}/busco/{os.path.basename(genome_assembly_file)}.protein.fa',
+			   'stattxt': f'{output_directory}/busco/busco_{os.path.basename(genome_assembly_file)}.protein.fa/short_summary.specific.{busco_dataset}.busco_{os.path.basename(genome_assembly_file)}.protein.fa.txt',
+			   'statjson': f'{output_directory}/busco/busco_{os.path.basename(genome_assembly_file)}.protein.fa/short_summary.specific.{busco_dataset}.busco_{os.path.basename(genome_assembly_file)}.protein.fa.json'}
+	protect = [outputs['stattxt'], outputs['statjson']]
+	options = {
+		'cores': 30,
+		'memory': '50g',
+		'walltime': '10:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate assembly
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	mkdir -p {output_directory}/busco
+
+	agat_sp_extract_sequences.pl \
+		--fasta {genome_assembly_file} \
+		--gff {genome_annotation_gtf} \
+		--type gene \
+		--protein \
+		--output {output_directory}/busco/{os.path.basename(genome_assembly_file)}.protein.fa \
+
+	busco \
+		--cpu {options['cores']} \
+		--force \
+		--in {output_directory}/busco/{os.path.basename(genome_assembly_file)}.protein.fa \
+		--mode proteins \
+		--out busco_{os.path.basename(genome_assembly_file)}.protein.fa \
+		--out_path {output_directory}/busco \
+		--download_path {busco_download_path} \
+		--lineage {busco_download_path}/lineages/{busco_dataset} \
+		--tar
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)

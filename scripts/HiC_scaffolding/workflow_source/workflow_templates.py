@@ -605,3 +605,52 @@ def finalize_3ddna(reviewed_assembly_file: str, draft_assembly_file: str, merged
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_path: str = '/faststorage/project/EcoGenetics/databases/BUSCO'):
+	"""
+	Template: Runs BUSCO analysis on genome assembly.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'genome': genome_assembly_file}
+	outputs = {'stattxt': f'{os.path.dirname(genome_assembly_file)}/busco_{os.path.basename(genome_assembly_file)}/short_summary.specific.{busco_dataset}.busco_{os.path.basename(genome_assembly_file)}.txt',
+			   'statjson': f'{os.path.dirname(genome_assembly_file)}/busco_{os.path.basename(genome_assembly_file)}/short_summary.specific.{busco_dataset}.busco_{os.path.basename(genome_assembly_file)}.json'}
+	protect = [outputs['stattxt'], outputs['statjson']]
+	options = {
+		'cores': 30,
+		'memory': '50g',
+		'walltime': '10:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate assembly
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	cd {os.path.dirname(genome_assembly_file)}
+
+	busco \
+		--cpu {options['cores']} \
+		--force \
+		--in {genome_assembly_file} \
+		--mode genome \
+		--out busco_{os.path.basename(genome_assembly_file)} \
+		--out_path {os.path.dirname(genome_assembly_file)} \
+		--download_path {busco_download_path} \
+		--lineage {busco_download_path}/lineages/{busco_dataset} \
+		--tar \
+		--offline
+
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)

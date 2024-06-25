@@ -15,17 +15,18 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
     #                  Configuration
     # --------------------------------------------------
     
-    config = yaml.safe_load(open(config_file))
-    ACCOUNT: str = config['account']
-    SPECIES_NAME: str = config['species_name']
-    OUTPUT_DIR: str = config['output_directory_path']
-    GENOME_ASSEMBLY: str = config['genome_assembly_file']
-    BRAKER_SETTING: int = config['braker_setting']
-    RNA_READS: list = config['rna_sequence_files']
-    PROTEIN_DB: str = config['protein_database_file']
-    REFERENCE: str = config['referene_genome_file']
-    GTF: str = config['gtf_genome_annotation_file']
-    ALT_NAME: str = config['alternative_folder_name']
+    CONFIG = yaml.safe_load(open(config_file))
+    ACCOUNT: str = CONFIG['account']
+    SPECIES_NAME: str = CONFIG['species_name']
+    OUTPUT_DIR: str = CONFIG['output_directory_path']
+    GENOME_ASSEMBLY: str = CONFIG['genome_assembly_file']
+    BRAKER_SETTING: int = CONFIG['braker_setting']
+    RNA_READS: list = CONFIG['rna_sequence_files']
+    PROTEIN_DB: str = CONFIG['protein_database_file']
+    REFERENCE: str = CONFIG['referene_genome_file']
+    GTF: str = CONFIG['gtf_genome_annotation_file']
+    ALT_NAME: str = CONFIG['alternative_folder_name']
+    BUSCO: str = CONFIG['busco_dataset_name']
     
     # --------------------------------------------------
     #                  Workflow
@@ -59,7 +60,7 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
 
     # Running BRAKER using only RNA evidence
     if BRAKER_SETTING == 1:
-        braker_rna = gwf.target_from_template(
+        braker = gwf.target_from_template(
             name=f'{species_abbreviation(SPECIES_NAME)}_braker1',
             template=braker1(
                 genome_assembly_file=GENOME_ASSEMBLY,
@@ -82,7 +83,7 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
             )
             PROTEIN_DB = make_database.outputs['proteins']
 
-        braker_rna_and_db = gwf.target_from_template(
+        braker = gwf.target_from_template(
             name=f'{species_abbreviation(SPECIES_NAME)}_braker2',
             template=braker2(
                 genome_assembly_file=GENOME_ASSEMBLY,
@@ -105,7 +106,7 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
             )
             PROTEIN_DB = make_database.outputs['proteins']
 
-        braker_rna_and_db = gwf.target_from_template(
+        braker = gwf.target_from_template(
             name=f'{species_abbreviation(SPECIES_NAME)}_braker3',
             template=braker3(
                 genome_assembly_file=GENOME_ASSEMBLY,
@@ -127,4 +128,15 @@ def braker3_annotation_workflow(config_file: str = glob.glob('*config.y*ml')[0])
     #             species_name=SPECIES_NAME
     #         )
     #     )
+
+    busco = gwf.target_from_template(
+        name=f'{species_abbreviation(SPECIES_NAME)}_busco_protein',
+        template=busco_protein(
+            genome_assembly_file=GENOME_ASSEMBLY,
+            genome_annotation_gtf=braker.outputs['gtf'],
+            output_directory=top_dir,
+            busco_dataset=BUSCO
+        )
+    )
+
     return gwf
