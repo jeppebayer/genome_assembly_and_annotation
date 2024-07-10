@@ -383,6 +383,7 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
+########################## Quality Assessment ##########################
 def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_path: str = '/faststorage/project/EcoGenetics/BACKUP/database/busco'):
 	"""
 	Template: Runs BUSCO analysis on genome assembly.
@@ -477,6 +478,67 @@ def busco_protein(protein_sequence_file: str, busco_dataset: str, busco_download
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+def merqury(genome_assembly_file: str, pacbio_hifi_reads: str, output_directory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'assembly': genome_assembly_file,
+		   	  'reads': pacbio_hifi_reads}
+	outputs = {}
+	options = {
+		'cores': 60,
+		'memory': '100g',
+		'walltime': '24:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate assembly
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/merqury/meryl ] || mkdir -p {output_directory}/merqury/meryl
+	
+	kmersize="$( \
+	"$(dirname "$(dirname "$(which merqury.sh)")")"/share/merqury/best_k.sh \
+		$(seqtk size {genome_assembly_file} | cut -f 2) \
+	| awk \
+		'BEGIN{{FS=OFS=" "}}
+		{{if (NR == 3)
+			if (($0 - int($0)) >= 0.5)
+			{{print int($0) + 1; exit}}
+		else
+			{{print int($0); exit}}
+		}}' \
+	)"
+	
+	meryl \
+		memory={options['memory']} \
+		threads={options['cores']} \
+		k="$kmersize" \
+		output {output_directory}/merqury/meryl/{os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}.meryl \
+		{pacbio_hifi_reads}
+
+	merqury \
+		{output_directory}/merqury/meryl/{os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}.meryl \
+		{genome_assembly_file} \
+		{output_directory}/merqury/
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 ########################## Purge duplicates ##########################
 def purge_dups_1_map_hifi_to_genome(gemone_assembly_file: str, hifi_sequence_file: str, output_directory: str, species_name: str, directory_addition: str = None, round_number: int = 1):

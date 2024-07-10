@@ -25,6 +25,7 @@ def draft_assembly_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         HIC_READS: list = config['hic_sequence_files']
     BUSCO_DATASET: str = config['busco_dataset_name']
     PURGE_ROUNDS: int = config['purge_dups_rounds']
+    ASSEMBLY: str = config['genome_assembly_file']
     
     # --------------------------------------------------
     #                  Workflow
@@ -179,5 +180,15 @@ def draft_assembly_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
                     busco_dataset=BUSCO_DATASET
                 )
             )
+
+    if ASSEMBLY:
+        merqury_qc = gwf.target_from_template(
+            name=f'{species_abbreviation(SPECIES_NAME)}_merqury',
+            template=merqury(
+                genome_assembly_file=ASSEMBLY,
+                pacbio_hifi_reads=remove_adapters.outputs['filt'],
+                output_directory=top_dir
+            )
+        )
 
     return gwf

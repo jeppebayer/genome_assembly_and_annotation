@@ -6,14 +6,15 @@ species_name: Isotoma viridis
 output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
 # Path to PacBio sequence file.
 pacbio_hifi_sequence_files:
-  - /faststorage/project/EcoGenetics/BACKUP/PacBio_HiFi/Isotoma_viridis/IsoVir.combined.hifi.fastq.gz
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Isotoma_viridis/IsoVir.combined.hifi.fastq.gz
 # Use Hi-C data during assembly? (1 = Yes/2 = No/3 = Both).
 use_hic_data: 3
 # List of Hi-C sequence files if avalable (optional).
 hic_sequence_files:
-  - /faststorage/project/EcoGenetics/BACKUP/HiC/IsoVir/IsoVir_Hi-C_L1_1.fq.gz
-  - /faststorage/project/EcoGenetics/BACKUP/HiC/IsoVir/IsoVir_Hi-C_L1_2.fq.gz
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Isotoma_viridis/IsoVir_Hi-C_L1_1.fq.gz
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Isotoma_viridis/IsoVir_Hi-C_L1_2.fq.gz
 # Name of BUSCO lineage dataset to use for analysis.
 busco_dataset_name: arthropoda_odb10
 # Number of purge_dups rounds.
 purge_dups_rounds: 6
+genome_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Isotoma_viridis/draft_assembly/purge_dups_primary/04/IsoVir.purged.fa
