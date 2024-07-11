@@ -508,8 +508,10 @@ def merqury(genome_assembly_file: str, pacbio_hifi_reads: str, output_directory:
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/merqury/meryl ] || mkdir -p {output_directory}/merqury/meryl
+	[ -d {output_directory}/merqury ] || mkdir -p {output_directory}/merqury
 	
+	cd {output_directory}/merqury
+
 	kmersize="$( \
 	"$(dirname "$(dirname "$(which merqury.sh)")")"/share/merqury/best_k.sh \
 		$(seqtk size {genome_assembly_file} | cut -f 2) \
@@ -522,18 +524,18 @@ def merqury(genome_assembly_file: str, pacbio_hifi_reads: str, output_directory:
 			{{print int($0); exit}}
 		}}' \
 	)"
-	
-	meryl \
+
+	meryl count \
 		memory={options['memory']} \
 		threads={options['cores']} \
 		k="$kmersize" \
-		output {output_directory}/merqury/meryl/{os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}.meryl \
+		output {os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}.meryl \
 		{pacbio_hifi_reads}
 
-	merqury \
-		{output_directory}/merqury/meryl/{os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}.meryl \
+	merqury.sh \
+		{os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}.meryl \
 		{genome_assembly_file} \
-		{output_directory}/merqury/
+		{os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
