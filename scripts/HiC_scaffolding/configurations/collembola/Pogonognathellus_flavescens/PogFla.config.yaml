@@ -4,8 +4,8 @@ account: EcoGenetics
 species_name: Pogonognathellus flavescens
 # List of path to Hi-C sequence files.
 hic_sequence_files:
-- /faststorage/project/EcoGenetics/BACKUP/HiC/PogFla/PogFla_Hi-C_L1_1.fq.gz
-- /faststorage/project/EcoGenetics/BACKUP/HiC/PogFla/PogFla_Hi-C_L1_2.fq.gz
+- /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Pogonognathellus_flavescens/PogFla_Hi-C_L1_1.fq.gz
+- /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Pogonognathellus_flavescens/PogFla_Hi-C_L1_2.fq.gz
 # Path to draft genome file.
 draft_genome_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Pogonognathellus_flavescens/draft_assembly/purge_dups_hic/03/PogFla.purged.fa
 # Directory for final output files.
@@ -16,3 +16,5 @@ number_of_edit_rounds: 6 # (Default 2)
 # Reviewed .assembly file generated from JuiceBox (can be left blank until a reviewed file has been produced).
 reviewed_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Pogonognathellus_flavescens/HiC_scaffolding/juicer/3ddna_in10000_r6/finalize/PogFla.purged.final.review.assembly
 number_of_chromosomes_to_keep: 8
+# Name of BUSCO lineage dataset to use for analysis.
+busco_dataset_name: arthropoda_odb10

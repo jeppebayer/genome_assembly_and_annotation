@@ -173,8 +173,8 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
             )
         )
 
-        busco = gwf.target_from_template(
-            name=f'{species_abbreviation(SPECIES_NAME)}_BUSCO_assembly',
+        busco_no_debris = gwf.target_from_template(
+            name=f'{species_abbreviation(SPECIES_NAME)}_BUSCO_assembly_no_debris',
             template=busco_genome(
                 genome_assembly_file=finalize.outputs['final_fasta'],
                 busco_dataset=BUSCO
