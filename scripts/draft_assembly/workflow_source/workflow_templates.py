@@ -542,6 +542,209 @@ def merqury(genome_assembly_file: str, pacbio_hifi_reads: str, output_directory:
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
+def blobtools_blobdir(genome_assembly_file: str, species_name: str, blastn_result_file: str, diamond_result_file: str, coverage_alignment_file: str, busco_full_table_file: str, ncbi_taxdump_directory: str = "/faststorage/project/EcoGenetics/databases/NCBI_Taxdump"):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'assembly': genome_assembly_file,
+			  'blastn': blastn_result_file,
+			  'diamond': diamond_result_file,
+			  'coverage': coverage_alignment_file,
+			  'busco': busco_full_table_file}
+	outputs = {}
+	options = {
+		'cores': 32,
+		'memory': '80g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate assembly
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {os.path.dirname(genome_assembly_file)}/qc/blobtools ] || mkdir -p {os.path.dirname(genome_assembly_file)}/qc/blobtools
+
+	blobtools create \
+		--threads {options['cores']} \
+		--key assembly.alias="{species_abbreviation(species_name)}" \
+		--key record_type="scaffold" \
+		--key taxon.name="{species_name}" \
+		--key taxon.genus="{species_name.split(sep=" ")[0]}" \
+		--key taxon.species="{species_name}" \
+		--fasta {genome_assembly_file} \
+		--hits {blastn_result_file} \
+		--hits {diamond_result_file} \
+		--taxrule bestsumorder \
+		--taxdump {ncbi_taxdump_directory} \
+		--cov {coverage_alignment_file} \
+		--busco {busco_full_table_file} \
+		{os.path.dirname(genome_assembly_file)}/qc/blobtools/blobtools_{os.path.basename(genome_assembly_file)}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def blobtools_blastn(genome_assembly_file: str, blast_database: str = "/faststorage/project/EcoGenetics/databases/NCBI_BLAST_DB/nt/nt"):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'assembly': genome_assembly_file}
+	outputs = {'blast': f'{os.path.dirname(genome_assembly_file)}/qc/blastn/{os.path.basename(genome_assembly_file)}.blast.out'}
+	options = {
+		'cores': 32,
+		'memory': '20g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate assembly
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {os.path.dirname(genome_assembly_file)}/qc/blastn ] || mkdir -p {os.path.dirname(genome_assembly_file)}/qc/blastn
+	
+	blastn \
+		-num_threads {options['cores']} \
+		-task megablast \
+		-db {blast_database} \
+		-query {genome_assembly_file} \
+		-outfmt "6 qseqid staxids bitscore std" \
+		-max_target_seqs 10 \
+		-max_hsps 1 \
+		-evalue 1e-25 \
+		-out {os.path.dirname(genome_assembly_file)}/qc/blastn/{os.path.basename(genome_assembly_file)}.blast.prog.out
+	
+	mv {os.path.dirname(genome_assembly_file)}/qc/blastn/{os.path.basename(genome_assembly_file)}.blast.prog.out {outputs['blast']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def blobtools_diamond(genome_assembly_file: str, diamond_database_file: str = "/faststorage/project/EcoGenetics/databases/UniProt/reference_proteomes.dmnd"):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'assembly': genome_assembly_file}
+	outputs = {'diamond': f'{os.path.dirname(genome_assembly_file)}/qc/diamond/{os.path.basename(genome_assembly_file)}.diamond.out'}
+	options = {
+		'cores': 32,
+		'memory': '20g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate assembly
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {os.path.dirname(genome_assembly_file)}/qc/diamond ] || mkdir -p {os.path.dirname(genome_assembly_file)}/qc/diamond
+	
+	diamond blastx \
+		--threads {options['cores']} \
+		--db {diamond_database_file} \
+		--outfmt 6 qseqid staxids bitscore qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore \
+		--sensitive \
+		--max-target-seqs 1 \
+		--evalue 1e-25 \
+		--query {genome_assembly_file} \
+		> {os.path.dirname(genome_assembly_file)}/qc/diamond/{os.path.basename(genome_assembly_file)}.diamond.prog.out
+	
+	mv {os.path.dirname(genome_assembly_file)}/qc/diamond/{os.path.basename(genome_assembly_file)}.diamond.prog.out {outputs['diamond']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def blobtools_coverage(genome_assembly_file: str, pacbio_hifi_reads: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'assembly': genome_assembly_file,
+		   	  'hifireads': pacbio_hifi_reads}
+	outputs = {'alignment': f'{os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam',
+			   'index': f'{os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.bai'}
+	options = {
+		'cores': 32,
+		'memory': '80g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate assembly
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {os.path.dirname(genome_assembly_file)}/qc/coverage ] || mkdir -p {os.path.dirname(genome_assembly_file)}/qc/coverage
+	
+	minimap2 \
+		-x map-hifi \
+		-t {options['cores']} \
+		-a \
+		{genome_assembly_file} \
+		{pacbio_hifi_reads} \
+	| samtools sort \
+		--threads {options['cores'] - 1} \
+		--output-fmt BAM \
+		-o {os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam
+	
+	samtools index \
+		--threads {options['cores'] - 1} \
+		--bai \
+		--output {os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.bai
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
 ########################## Purge duplicates ##########################
 def purge_dups_1_map_hifi_to_genome(gemone_assembly_file: str, hifi_sequence_file: str, output_directory: str, species_name: str, directory_addition: str = None, round_number: int = 1):
 	"""

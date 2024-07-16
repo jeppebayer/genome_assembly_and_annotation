@@ -191,4 +191,38 @@ def draft_assembly_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
             )
         )
 
+        blobtools_blastn_search = gwf.target_from_template(
+            name=f'{species_abbreviation(SPECIES_NAME)}_blobtools_blastn',
+            template=blobtools_blastn(
+                genome_assembly_file=ASSEMBLY
+            )
+        )
+
+        blobtools_diamond_search = gwf.target_from_template(
+            name=f'{species_abbreviation(SPECIES_NAME)}_blobtools_diamond',
+            template=blobtools_diamond(
+                genome_assembly_file=ASSEMBLY
+            )
+        )
+
+        blobtools_coverage_alignment = gwf.target_from_template(
+            name=f'{species_abbreviation(SPECIES_NAME)}_blobtools_coverage',
+            template=blobtools_coverage(
+                genome_assembly_file=ASSEMBLY,
+                pacbio_hifi_reads=remove_adapters.outputs['filt']
+            )
+        )
+
+        blobtools = gwf.target_from_template(
+            name=f'{species_abbreviation(SPECIES_NAME)}_blobtools_blobdir',
+            template=blobtools_blobdir(
+                genome_assembly_file=ASSEMBLY,
+                species_name=SPECIES_NAME,
+                blastn_result_file=blobtools_blastn_search.outputs['blast'],
+                diamond_result_file=blobtools_diamond_search.outputs['diamond'],
+                coverage_alignment_file=blobtools_coverage_alignment.outputs['alignment'],
+                busco_full_table_file="/faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Isotoma_viridis/draft_assembly/purge_dups_primary/04/busco_IsoVir.purged.fa/run_arthropoda_odb10/full_table.tsv"
+            )
+        )
+
     return gwf
