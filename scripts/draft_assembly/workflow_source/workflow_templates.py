@@ -613,7 +613,7 @@ def blobtools_blastn(genome_assembly_file: str, blast_database: str = "/faststor
 	options = {
 		'cores': 32,
 		'memory': '20g',
-		'walltime': '12:00:00'
+		'walltime': '24:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -661,7 +661,7 @@ def blobtools_diamond(genome_assembly_file: str, diamond_database_file: str = "/
 	options = {
 		'cores': 32,
 		'memory': '20g',
-		'walltime': '12:00:00'
+		'walltime': '24:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -709,8 +709,8 @@ def blobtools_coverage(genome_assembly_file: str, pacbio_hifi_reads: str):
 			   'index': f'{os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.bai'}
 	options = {
 		'cores': 32,
-		'memory': '80g',
-		'walltime': '12:00:00'
+		'memory': '100g',
+		'walltime': '24:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -738,7 +738,8 @@ def blobtools_coverage(genome_assembly_file: str, pacbio_hifi_reads: str):
 	samtools index \
 		--threads {options['cores'] - 1} \
 		--bai \
-		--output {os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.bai
+		--output {os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.bai \
+		{os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

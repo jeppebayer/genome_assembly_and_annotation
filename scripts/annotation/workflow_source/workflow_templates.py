@@ -171,9 +171,13 @@ def make_protein_db(reference_genome_file: str, gtf_annotation_file: str, output
 	
 	[ -d {output_directory}/proteinDB ] || mkdir -p {output_directory}/proteinDB
 	
+	cd {output_directory}/proteinDB
+
+	ln -s {reference_genome_file} {os.path.basename(reference_genome_file)}
+
 	agat_sp_extract_sequences.pl \
 		--gff {gtf_annotation_file} \
-		--fasta {reference_genome_file} \
+		--fasta {os.path.basename(reference_genome_file)} \
 		--type cds \
 		--protein \
 		--output {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta
@@ -184,6 +188,8 @@ def make_protein_db(reference_genome_file: str, gtf_annotation_file: str, output
 		{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta \
 		> {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.prog.fasta
 	
+	rm {os.path.basename(reference_genome_file)}
+	rm {os.path.basename(reference_genome_file)}.index
 	rm {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta
 	mv {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.prog.fasta {outputs['proteins']}
 	rm *.agat.log
