@@ -127,7 +127,19 @@ totalintron=${annotationgtfarray[9]}
 nintron=${annotationgtfarray[10]}
 exonpergene=${annotationgtfarray[11]//$'\n'/}
 
-markdownformat() { 
+repeatmaskfulltablevalues=$(
+	awk \
+	'BEGIN{
+	FS = "\t"
+	OFS = "|"
+	}
+	{
+	if ($1 == "bases masked:")
+		{}
+	}'
+)
+
+markdownformat() {
 cat << EOF
 
 | Genome Assembly |  |
