@@ -11,10 +11,11 @@ output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genom
 # Name of BUSCO lineage dataset to use for analysis.
 busco_dataset_name: arthropoda_odb10
 # Use only RNA data (1), use use only protein database file (2), or both RNA data and protein database (3). (1 | 2 | 3).
-braker_setting: 2
+braker_setting: 3
 # 0 & 1: List of path to RNA sequence files (read 1 & read 2).
 rna_sequence_files:
-- 
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/rna/Pogonognathellus_flavescens/RNA-P-Fla_R1_001.fastq.gz
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/rna/Pogonognathellus_flavescens/RNA-P-Fla_R2_001.fastq.gz
 # 1 & 2: Path to protein database file in FASTA format.
 protein_database_file: 
 # Alternative if desired database does not exist.

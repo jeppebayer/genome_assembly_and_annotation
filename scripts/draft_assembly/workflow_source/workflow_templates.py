@@ -613,7 +613,7 @@ def blobtools_blastn(genome_assembly_file: str, blast_database: str = "/faststor
 	options = {
 		'cores': 32,
 		'memory': '20g',
-		'walltime': '24:00:00'
+		'walltime': '48:00:00'
 	}
 	spec = f"""
 	# Sources environment
