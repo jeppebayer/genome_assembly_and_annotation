@@ -366,7 +366,7 @@ def contact_matrix_manual_curation(JBAT_text_file: str, JBAT_log_file: str, outp
 ########################## Hi-C scaffolding juicer ##########################
 #----------------------------------------------------------------------------
 
-def setup_for_juicer(hic_sequence_files: list, draft_genome_assembly_file: str, output_directory: str, split_size: int = 8000000):
+def setup_for_juicer(hic_read1_files: list, hic_read2_files: list, draft_genome_assembly_file: str, output_directory: str, split_size: int = 8000000):
 	"""
 	Template: Set up directory structure required by the :script:`juicer` pipeline.
 	
@@ -377,11 +377,10 @@ def setup_for_juicer(hic_sequence_files: list, draft_genome_assembly_file: str, 
 	
 	:param
 	"""
-	inputs = {'hic_reads': hic_sequence_files,
+	inputs = {'hic_read1': hic_read1_files,
+		   	  'hic_read2': hic_read2_files,
 		   	  'genome': draft_genome_assembly_file}
 	outputs = {'reference': f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}',
-			   'hic_reads': [f'{output_directory}/HiC_scaffolding/juicer/fastq/hic_R1.fastq',
-							 f'{output_directory}/HiC_scaffolding/juicer/fastq/hic_R2.fastq'],
 			   'bwa': [f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.amb',
 					   f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.ann',
 					   f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.pac',
@@ -389,7 +388,7 @@ def setup_for_juicer(hic_sequence_files: list, draft_genome_assembly_file: str, 
 					   f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.sa'],
 			   'fai': f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.fai',
 			   'sizes': f'{output_directory}/HiC_scaffolding/juicer/chrom.sizes'}
-	protect = [outputs['reference'], outputs['hic_reads'][0], outputs['hic_reads'][1], outputs['bwa'][0], outputs['bwa'][1], outputs['bwa'][2], outputs['bwa'][3], outputs['bwa'][4], outputs['fai'], outputs['sizes']]
+	protect = [outputs['reference'], outputs['bwa'][0], outputs['bwa'][1], outputs['bwa'][2], outputs['bwa'][3], outputs['bwa'][4], outputs['fai'], outputs['sizes']]
 	options = {
 		'cores': 1,
 		'memory': '20g',
@@ -416,8 +415,6 @@ def setup_for_juicer(hic_sequence_files: list, draft_genome_assembly_file: str, 
 	[ -d {output_directory}/HiC_scaffolding/juicer/splits ] || mkdir -p {output_directory}/HiC_scaffolding/juicer/splits
 	
 	[ -e {outputs['reference']} ] || ln -s {draft_genome_assembly_file} {outputs['reference']}
-	gunzip -c {hic_sequence_files[0]} > {outputs['hic_reads'][0]}
-	gunzip -c {hic_sequence_files[1]} > {outputs['hic_reads'][1]}
 
 	bwa index \
 		-p {output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)} \
@@ -431,17 +428,21 @@ def setup_for_juicer(hic_sequence_files: list, draft_genome_assembly_file: str, 
 
 	split \
 		-a 3 \
-		-l {split_size} \
-		-d --additional-suffix=_R1.fastq \
-		{output_directory}/HiC_scaffolding/juicer/fastq/hic_R1.fastq \
-		{output_directory}/HiC_scaffolding/juicer/splits/x
+		-l 8000000 \
+		-d \
+		--additional-suffix=_R1.fastq \
+		--filter='gzip > $FILE.gz' \
+		<(zcat {" ".join(hic_read1_files)}) \
+		{output_directory}/HiC_scaffolding/juicer/splits/
 	
 	split \
 		-a 3 \
-		-l {split_size} \
-		-d --additional-suffix=_R2.fastq \
-		{output_directory}/HiC_scaffolding/juicer/fastq/hic_R2.fastq \
-		{output_directory}/HiC_scaffolding/juicer/splits/x
+		-l 8000000 \
+		-d \
+		--additional-suffix=_R2.fastq \
+		--filter='gzip > $FILE.gz' \
+		<(zcat {" ".join(hic_read2_files)}) \
+		{output_directory}/HiC_scaffolding/juicer/splits/
 	
 	awk \
 		'BEGIN{{OFS = "\\t"}}

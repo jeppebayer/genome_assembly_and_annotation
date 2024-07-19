@@ -130,14 +130,28 @@ exonpergene=${annotationgtfarray[11]//$'\n'/}
 repeatmaskfulltablevalues=$(
 	awk \
 	'BEGIN{
-	FS = "\t"
+	FS = " "
 	OFS = "|"
 	}
 	{
-	if ($1 == "bases masked:")
-		{}
-	}'
+	if ($0 ~ /bases masked:/)
+		{gsub(/\s/, "")
+		split($0, masked, "(")
+		repeattotal = substr(masked[2], 1, length(masked[2]) - 1)}
+	if ($0 ~ /Unclassified:/)
+		{gsub(/\s/, "")
+		split($0, unclass, "bp")
+		repeatunclass = unclass[2]}
+	}
+	END{
+	print repeattotal, repeatunclass
+	}' \
+	$repeatmaskfulltable
 )
+
+readarray -d "|" -t repeatmaskfulltablearray <<< "$repeatmaskfulltablevalues"
+repeattotal=${repeatmaskfulltablearray[0]}
+repeatunclass=${repeatmaskfulltablearray[1]}
 
 markdownformat() {
 cat << EOF

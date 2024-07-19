@@ -706,7 +706,7 @@ def blobtools_coverage(genome_assembly_file: str, pacbio_hifi_reads: str):
 	inputs = {'assembly': genome_assembly_file,
 		   	  'hifireads': pacbio_hifi_reads}
 	outputs = {'alignment': f'{os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam',
-			   'index': f'{os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.bai'}
+			   'index': f'{os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.csi'}
 	options = {
 		'cores': 32,
 		'memory': '100g',
@@ -737,8 +737,8 @@ def blobtools_coverage(genome_assembly_file: str, pacbio_hifi_reads: str):
 	
 	samtools index \
 		--threads {options['cores'] - 1} \
-		--bai \
-		--output {os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.bai \
+		--csi \
+		--output {os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.csi \
 		{os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam
 	
 	echo "END: $(date)"
