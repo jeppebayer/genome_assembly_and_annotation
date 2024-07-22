@@ -392,7 +392,7 @@ def setup_for_juicer(hic_read1_files: list, hic_read2_files: list, draft_genome_
 	options = {
 		'cores': 1,
 		'memory': '20g',
-		'walltime': '12:00:00'
+		'walltime': '36:00:00'
 	}
 	spec = f"""
 	# Sources environment
