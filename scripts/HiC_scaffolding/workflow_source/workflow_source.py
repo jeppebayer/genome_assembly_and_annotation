@@ -126,12 +126,7 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
         defaults={'account': ACCOUNT}
     )
     
-    top_dir = f'{OUTPUT_DIR}/{SPECIES_NAME.replace(" ", "_")}'
-    os.makedirs(top_dir, exist_ok=True)
-    assembly_3ddna_directory = f'{top_dir}/HiC_scaffolding/juicer/3ddna_in{INPUT_SIZE}_r{EDIT_ROUDNS}'
-    os.makedirs(assembly_3ddna_directory, exist_ok=True)
-    assembly_3ddna_finalize_directory = f'{assembly_3ddna_directory}/finalize'
-    os.makedirs(assembly_3ddna_finalize_directory, exist_ok=True)
+    top_dir = f'{OUTPUT_DIR}/{SPECIES_NAME.replace(" ", "_")}/HiC_scaffolding'
 
     setup = gwf.target_from_template(
         name=f'{species_abbreviation(SPECIES_NAME)}_juicer_setup',
@@ -158,7 +153,7 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
         template=assembly_3ddna(
             draft_assembly_file=DRAFT_GENOME,
             merged_nodups_file=juicer.outputs['nodups'],
-            working_directory=assembly_3ddna_directory,
+            output_directory=top_dir,
             edit_rounds=EDIT_ROUDNS,
             input_size=INPUT_SIZE
         )
@@ -172,7 +167,7 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
                 draft_assembly_file=DRAFT_GENOME,
                 merged_nodups_file=juicer.outputs['nodups'],
                 number_of_chromosomes=CHROM_NUM,
-                working_directory=assembly_3ddna_finalize_directory
+                final_hic_file=assembly.outputs['hic']
             )
         )
 

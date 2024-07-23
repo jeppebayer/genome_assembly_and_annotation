@@ -380,14 +380,15 @@ def setup_for_juicer(hic_read1_files: list, hic_read2_files: list, draft_genome_
 	inputs = {'hic_read1': hic_read1_files,
 		   	  'hic_read2': hic_read2_files,
 		   	  'genome': draft_genome_assembly_file}
-	outputs = {'reference': f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}',
-			   'bwa': [f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.amb',
-					   f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.ann',
-					   f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.pac',
-					   f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.bwt',
-					   f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.sa'],
-			   'fai': f'{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.fai',
-			   'sizes': f'{output_directory}/HiC_scaffolding/juicer/chrom.sizes'}
+	outputs = {'reference': f'{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}',
+			   'fastq': [f'{output_directory}/juicer/fastq/{os.path.basename(i)}' for i in hic_read1_files + hic_read2_files],
+			   'bwa': [f'{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.amb',
+					   f'{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.ann',
+					   f'{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.pac',
+					   f'{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.bwt',
+					   f'{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.sa'],
+			   'fai': f'{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.fai',
+			   'sizes': f'{output_directory}/juicer/chrom.sizes'}
 	protect = [outputs['reference'], outputs['bwa'][0], outputs['bwa'][1], outputs['bwa'][2], outputs['bwa'][3], outputs['bwa'][4], outputs['fai'], outputs['sizes']]
 	options = {
 		'cores': 1,
@@ -404,27 +405,38 @@ def setup_for_juicer(hic_read1_files: list, hic_read2_files: list, draft_genome_
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/HiC_scaffolding ] || mkdir -p {output_directory}/HiC_scaffolding
-	[ -d {output_directory}/HiC_scaffolding/juicer/aligned ] && rm -rf {output_directory}/HiC_scaffolding/juicer/aligned
-	[ -d {output_directory}/HiC_scaffolding/juicer/debug ] && rm -rf {output_directory}/HiC_scaffolding/juicer/debug
-	[ -d {output_directory}/HiC_scaffolding/juicer/HIC_tmp ] && rm -rf {output_directory}/HiC_scaffolding/juicer/HIC_tmp
-	[ -d {output_directory}/HiC_scaffolding/juicer/fastq ] || mkdir -p {output_directory}/HiC_scaffolding/juicer/fastq
-	[ -d {output_directory}/HiC_scaffolding/juicer/references ] || mkdir -p {output_directory}/HiC_scaffolding/juicer/references
-	[ -d {output_directory}/HiC_scaffolding/juicer/restriction_sites ] || mkdir -p {output_directory}/HiC_scaffolding/juicer/restriction_sites
-	[ -d {output_directory}/HiC_scaffolding/juicer/splits ] && rm -rf {output_directory}/HiC_scaffolding/juicer/splits 
-	[ -d {output_directory}/HiC_scaffolding/juicer/splits ] || mkdir -p {output_directory}/HiC_scaffolding/juicer/splits
+	[ -d {output_directory}/juicer ] || mkdir -p {output_directory}/juicer
+	[ -d {output_directory}/juicer/aligned ] && rm -rf {output_directory}/juicer/aligned
+	[ -d {output_directory}/juicer/debug ] && rm -rf {output_directory}/juicer/debug
+	[ -d {output_directory}/juicer/HIC_tmp ] && rm -rf {output_directory}/juicer/HIC_tmp
+	[ -d {output_directory}/juicer/fastq ] || mkdir -p {output_directory}/juicer/fastq
+	[ -d {output_directory}/juicer/references ] || mkdir -p {output_directory}/juicer/references
+	[ -d {output_directory}/juicer/restriction_sites ] || mkdir -p {output_directory}/juicer/restriction_sites
+	[ -d {output_directory}/juicer/splits ] && rm -rf {output_directory}/juicer/splits 
+	[ -d {output_directory}/juicer/splits ] || mkdir -p {output_directory}/juicer/splits
 	
 	[ -e {outputs['reference']} ] || ln -s {draft_genome_assembly_file} {outputs['reference']}
 
+	read1=({" ".join(hic_read1_files)})
+	read2=({" ".join(hic_read2_files)})
+
+	for i in ${{read1[@]}}; do
+		ln -s "$i" {output_directory}/juicer/fastq/"$(basename "$i")"
+	done
+
+	for i in ${{read2[@]}}; do
+		ln -s "$i" {output_directory}/juicer/fastq/"$(basename "$i")"
+	done
+	
 	bwa index \
-		-p {output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)} \
-		{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}
+		-p {output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)} \
+		{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}
 	
 	samtools faidx \
-		-o {output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.prog.fai \
-		{output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}
+		-o {output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.prog.fai \
+		{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}
 	
-	mv {output_directory}/HiC_scaffolding/juicer/references/{os.path.basename(draft_genome_assembly_file)}.prog.fai {outputs['fai']}
+	mv {output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.prog.fai {outputs['fai']}
 
 	split \
 		-a 3 \
@@ -433,7 +445,7 @@ def setup_for_juicer(hic_read1_files: list, hic_read2_files: list, draft_genome_
 		--additional-suffix=_R1.fastq \
 		--filter='gzip > $FILE.gz' \
 		<(zcat {" ".join(hic_read1_files)}) \
-		{output_directory}/HiC_scaffolding/juicer/splits/
+		{output_directory}/juicer/splits/
 	
 	split \
 		-a 3 \
@@ -442,15 +454,15 @@ def setup_for_juicer(hic_read1_files: list, hic_read2_files: list, draft_genome_
 		--additional-suffix=_R2.fastq \
 		--filter='gzip > $FILE.gz' \
 		<(zcat {" ".join(hic_read2_files)}) \
-		{output_directory}/HiC_scaffolding/juicer/splits/
+		{output_directory}/juicer/splits/
 	
 	awk \
 		'BEGIN{{OFS = "\\t"}}
 		{{print $1, $2}}' \
 		{outputs['fai']} \
-		> {output_directory}/HiC_scaffolding/juicer/chrom.prog.sizes
+		> {output_directory}/juicer/chrom.prog.sizes
 
-	mv {output_directory}/HiC_scaffolding/juicer/chrom.prog.sizes {outputs['sizes']}
+	mv {output_directory}/juicer/chrom.prog.sizes {outputs['sizes']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -470,7 +482,7 @@ def juicer_pipeline(draft_genome_assembly_file: str, chrom_sizes_file: str, outp
 	"""
 	inputs = {'genome': draft_genome_assembly_file,
 		   	  'sizes': chrom_sizes_file}
-	outputs = {'nodups': f'{output_directory}/HiC_scaffolding/juicer/aligned/merged_nodups.txt'}
+	outputs = {'nodups': f'{output_directory}/juicer/aligned/merged_nodups.txt'}
 	options = {
 		'cores': 1,
 		'memory': '5g',
@@ -487,7 +499,7 @@ def juicer_pipeline(draft_genome_assembly_file: str, chrom_sizes_file: str, outp
 	echo "JobID: $SLURM_JOBID"
 	
 	bash {juicer} \
-		-d {output_directory}/HiC_scaffolding/juicer \
+		-d {output_directory}/juicer \
 		-D {os.path.dirname(os.path.dirname(juicer))} \
 		-p {chrom_sizes_file} \
 		-A EcoGenetics \
@@ -505,7 +517,7 @@ def juicer_pipeline(draft_genome_assembly_file: str, chrom_sizes_file: str, outp
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def assembly_3ddna(draft_assembly_file: str, merged_nodups_file: str, working_directory: str, input_size: int = 15000, edit_rounds: int = 3):
+def assembly_3ddna(draft_assembly_file: str, merged_nodups_file: str, output_directory: str, input_size: int = 15000, edit_rounds: int = 3):
 	"""
 	Template: 3D de novo assembly
 	
@@ -516,14 +528,13 @@ def assembly_3ddna(draft_assembly_file: str, merged_nodups_file: str, working_di
 	
 	:param
 	"""
-	working_dir = working_directory
 	inputs = {'assembly': draft_assembly_file,
 		   	  'nodups': merged_nodups_file}
-	outputs = {'final_fasta': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.fasta',
-			   'final_asm': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.asm',
-			   'final_assembly': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.assembly',
-			   'final_cprops': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.cprops',
-			   'final_hic': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.hic'}
+	outputs = {'final_fasta': f'{output_directory}/juicer/3ddna_in{input_size}_r{edit_rounds}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.fasta',
+			   'final_asm': f'{output_directory}/juicer/3ddna_in{input_size}_r{edit_rounds}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.asm',
+			   'final_assembly': f'{output_directory}/juicer/3ddna_in{input_size}_r{edit_rounds}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.assembly',
+			   'final_cprops': f'{output_directory}/juicer/3ddna_in{input_size}_r{edit_rounds}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.cprops',
+			   'final_hic': f'{output_directory}/juicer/3ddna_in{input_size}_r{edit_rounds}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.final.hic'}
 	options = {
 		'cores': 40,
 		'memory': '80g',
@@ -539,9 +550,11 @@ def assembly_3ddna(draft_assembly_file: str, merged_nodups_file: str, working_di
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {working_directory}/tmp ] || mkdir -p {working_directory}/tmp
+	[ -d {output_directory}/juicer/3ddna_in{input_size}_r{edit_rounds}/tmp ] || mkdir -p {output_directory}/juicer/3ddna_in{input_size}_r{edit_rounds}/tmp
 	
-	export _JAVA_OPTIONS="-Djava.io.tmpdir={working_directory}/tmp -Xmx{options['memory']}"
+	cd {output_directory}/juicer/3ddna_in{input_size}_r{edit_rounds}
+
+	export _JAVA_OPTIONS="-Djava.io.tmpdir={output_directory}/juicer/3ddna_in{input_size}_r{edit_rounds}/tmp -Xmx{options['memory']}"
 
 	3d-dna \
 		--rounds {edit_rounds} \
@@ -552,9 +565,9 @@ def assembly_3ddna(draft_assembly_file: str, merged_nodups_file: str, working_di
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def finalize_3ddna(reviewed_assembly_file: str, draft_assembly_file: str, merged_nodups_file: str, number_of_chromosomes: int, working_directory: str, post_review: str = '/home/jepe/miniconda3/envs/assembly/share/3d-dna/run-asm-pipeline-post-review.sh'):
+def finalize_3ddna(reviewed_assembly_file: str, draft_assembly_file: str, merged_nodups_file: str, number_of_chromosomes: int, final_hic_file: str, post_review: str = '/home/jepe/miniconda3/envs/assembly/share/3d-dna/run-asm-pipeline-post-review.sh'):
 	"""
 	Template: Finalizes draft assembly using reviewed :format:`assembly` file from :script:`JuiceBox`.
 	
@@ -565,13 +578,13 @@ def finalize_3ddna(reviewed_assembly_file: str, draft_assembly_file: str, merged
 	
 	:param
 	"""
-	working_dir = working_directory
 	inputs = {'asm': reviewed_assembly_file,
 		   	  'assembly': draft_assembly_file,
-			  'nodups': merged_nodups_file}
-	outputs = {'fasta': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}_HiC.fasta',
-			   'asm': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}_HiC.assembly',
-			   'final_fasta': f'{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.nodebris.fasta'}
+			  'nodups': merged_nodups_file,
+			  'hic': final_hic_file}
+	outputs = {'fasta': f'{os.path.dirname(final_hic_file)}/finalize/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}_HiC.fasta',
+			   'asm': f'{os.path.dirname(final_hic_file)}/finalize/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}_HiC.assembly',
+			   'final_fasta': f'{os.path.dirname(final_hic_file)}/finalize/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.nodebris.fasta'}
 	options = {
 		'cores': 40,
 		'memory': '80g',
@@ -587,6 +600,10 @@ def finalize_3ddna(reviewed_assembly_file: str, draft_assembly_file: str, merged
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
+	[ -d {os.path.dirname(final_hic_file)}/finalize ] || mkdir -p {os.path.dirname(final_hic_file)}/finalize
+
+	cd {os.path.dirname(final_hic_file)}/finalize
+
 	bash {post_review} \
 		--sort-output \
 		-s finalize \
@@ -597,15 +614,15 @@ def finalize_3ddna(reviewed_assembly_file: str, draft_assembly_file: str, merged
 	seqkit range \
 		-j {options['cores']} \
 		-r 1:{number_of_chromosomes} \
-		-o {working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.nodebris.prog.fasta \
-		{working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}_HiC.fasta
+		-o {os.path.dirname(final_hic_file)}/finalize/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.nodebris.prog.fasta \
+		{os.path.dirname(final_hic_file)}/finalize/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}_HiC.fasta
 	
-	mv {working_directory}/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.nodebris.prog.fasta {outputs['final_fasta']}
+	mv {os.path.dirname(final_hic_file)}/finalize/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.nodebris.prog.fasta {outputs['final_fasta']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_path: str = '/faststorage/project/EcoGenetics/databases/BUSCO'):
 	"""
