@@ -381,7 +381,8 @@ def setup_for_juicer(hic_read1_files: list, hic_read2_files: list, draft_genome_
 		   	  'hic_read2': hic_read2_files,
 		   	  'genome': draft_genome_assembly_file}
 	outputs = {'reference': f'{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}',
-			   'fastq': [f'{output_directory}/juicer/fastq/{os.path.basename(i)}' for i in hic_read1_files + hic_read2_files],
+			   'fastq1': [f'{output_directory}/juicer/fastq/{i + 1}_R1.{"fastq.gz" if j.endswith(".gz") else ".fastq"}' for i, j in enumerate(hic_read1_files)],
+			   'fastq2': [f'{output_directory}/juicer/fastq/{i + 1}_R2.{"fastq.gz" if j.endswith(".gz") else ".fastq"}' for i, j in enumerate(hic_read2_files)],
 			   'bwa': [f'{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.amb',
 					   f'{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.ann',
 					   f'{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.pac',
@@ -409,23 +410,27 @@ def setup_for_juicer(hic_read1_files: list, hic_read2_files: list, draft_genome_
 	[ -d {output_directory}/juicer/aligned ] && rm -rf {output_directory}/juicer/aligned
 	[ -d {output_directory}/juicer/debug ] && rm -rf {output_directory}/juicer/debug
 	[ -d {output_directory}/juicer/HIC_tmp ] && rm -rf {output_directory}/juicer/HIC_tmp
-	[ -d {output_directory}/juicer/fastq ] || mkdir -p {output_directory}/juicer/fastq
-	[ -d {output_directory}/juicer/references ] || mkdir -p {output_directory}/juicer/references
+	[ -d {output_directory}/juicer/fastq ] && rm -rf {output_directory}/juicer/fastq
+	mkdir -p {output_directory}/juicer/fastq
+	[ -d {output_directory}/juicer/references ] && rm -rf {output_directory}/juicer/references
+	mkdir -p {output_directory}/juicer/references
 	[ -d {output_directory}/juicer/restriction_sites ] || mkdir -p {output_directory}/juicer/restriction_sites
 	[ -d {output_directory}/juicer/splits ] && rm -rf {output_directory}/juicer/splits 
-	[ -d {output_directory}/juicer/splits ] || mkdir -p {output_directory}/juicer/splits
+	mkdir -p {output_directory}/juicer/splits
 	
 	[ -e {outputs['reference']} ] || ln -s {draft_genome_assembly_file} {outputs['reference']}
 
 	read1=({" ".join(hic_read1_files)})
+	fastq1=({" ".join(outputs['fastq1'])})
 	read2=({" ".join(hic_read2_files)})
+	fastq2=({" ".join(outputs['fastq2'])})
 
-	for i in ${{read1[@]}}; do
-		ln -s "$i" {output_directory}/juicer/fastq/"$(basename "$i")"
+	for (( i = 0; i < ${{#read1[@]}}; i++ )); do
+		[ -e "${{fastq1[$i]}}" ] || ln -s "${{read1[$i]}}" "${{fastq1[$i]}}"
 	done
 
-	for i in ${{read2[@]}}; do
-		ln -s "$i" {output_directory}/juicer/fastq/"$(basename "$i")"
+	for (( i = 0; i < ${{#read2[@]}}; i++ )); do
+		[ -e "${{fastq2[$i]}}" ] || ln -s "${{read2[$i]}}" "${{fastq2[$i]}}"
 	done
 	
 	bwa index \
