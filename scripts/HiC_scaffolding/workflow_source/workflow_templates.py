@@ -1,6 +1,6 @@
 #!/bin/env python3
 from gwf import AnonymousTarget
-import os, glob
+import os, sys, glob
 
 ########################## Functions ##########################
 
@@ -572,7 +572,7 @@ def assembly_3ddna(draft_assembly_file: str, merged_nodups_file: str, output_dir
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def finalize_3ddna(reviewed_assembly_file: str, draft_assembly_file: str, merged_nodups_file: str, number_of_chromosomes: int, final_hic_file: str, post_review: str = '/home/jepe/miniconda3/envs/assembly/share/3d-dna/run-asm-pipeline-post-review.sh'):
+def finalize_3ddna(reviewed_assembly_file: str, draft_assembly_file: str, merged_nodups_file: str, number_of_chromosomes: int, final_hic_file: str, post_review: str = f'{os.path.dirname(os.path.dirname(os.path.realpath(sys.executable)))}/share/3d-dna/run-asm-pipeline-post-review.sh'):
 	"""
 	Template: Finalizes draft assembly using reviewed :format:`assembly` file from :script:`JuiceBox`.
 	

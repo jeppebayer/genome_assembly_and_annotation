@@ -115,7 +115,8 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
     INPUT_SIZE: int = CONFIG['input_size']
     EDIT_ROUDNS: int = CONFIG['number_of_edit_rounds']
     REVIEW_FILE: str = CONFIG['reviewed_assembly_file']
-    CHROM_NUM: int= CONFIG['number_of_chromosomes_to_keep']
+    CHROM_NUM: int = CONFIG['number_of_chromosomes_to_keep']
+    BUNDLE: int = CONFIG['bundle_debris'] if CONFIG['bundle_debris'] else 0
     BUSCO: str = CONFIG['busco_dataset_name']
     
     # --------------------------------------------------
@@ -167,7 +168,7 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
                 draft_assembly_file=DRAFT_GENOME,
                 merged_nodups_file=juicer.outputs['nodups'],
                 number_of_chromosomes=CHROM_NUM,
-                final_hic_file=assembly.outputs['hic']
+                final_hic_file=assembly.outputs['final_hic']
             )
         )
 

@@ -3,14 +3,11 @@ account: EcoGenetics
 # Name of species being analyzed
 species_name: Entomobrya nicoleti
 # List of path to Hi-C sequence files.
-# List of path to Hi-C sequence files.
 hic_sequence_files:
   read1:
     - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Entomobrya_nicoleti/Ent_Nic_L1_1.1.fq.gz
-    - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Entomobrya_nicoleti/EntNic_L1_1.2.fq.gz
   read2:
     - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Entomobrya_nicoleti/Ent_Nic_L1_2.1.fq.gz
-    - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Entomobrya_nicoleti/EntNic_L1_2.2.fq.gz
 # Path to draft genome file.
 draft_genome_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/old_setup/data/EntNic_HiFi/mixed99/hifiasm/purge_dups/04/purged.fa
 # Directory for final output files.
@@ -21,5 +18,7 @@ number_of_edit_rounds: 6 # (Default 2)
 # Reviewed .assembly file generated from JuiceBox (can be left blank until a reviewed file has been produced).
 reviewed_assembly_file: 
 number_of_chromosomes_to_keep: 7
+# Whether or not to bundle debris sequences into one superscaffold (0 = no, 1 = yes)
+bundle_debris: 1
 # Name of BUSCO lineage dataset to use for analysis.
 busco_dataset_name: arthropoda_odb10
