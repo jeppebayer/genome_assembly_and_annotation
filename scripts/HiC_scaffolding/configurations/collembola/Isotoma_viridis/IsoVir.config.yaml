@@ -20,5 +20,7 @@ number_of_edit_rounds: 6 # (Default 2)
 # Reviewed .assembly file generated from JuiceBox (can be left blank until a reviewed file has been produced).
 reviewed_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Isotoma_viridis/HiC_scaffolding/juicer/3ddna_in10000_r6/finalize/IsoVir.purged.final.review.assembly
 number_of_chromosomes_to_keep: 7
+# Whether or not to bundle debris sequences into one superscaffold (0 = no, 1 = yes)
+bundle_debris: 0
 # Name of BUSCO lineage dataset to use for analysis.
 busco_dataset_name: arthropoda_odb10
