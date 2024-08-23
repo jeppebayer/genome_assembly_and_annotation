@@ -678,7 +678,7 @@ def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_p
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def bundle_debris(assembly_fasta_file: str, n_chromosomes_to_keep: int, output_directory: str, species_name: str):
+def bundle_sequences(assembly_fasta_file: str, n_chromosomes_to_keep: int, n_insertion_size: int = 1000):
 	"""
 	Template: template_description
 	
@@ -690,7 +690,8 @@ def bundle_debris(assembly_fasta_file: str, n_chromosomes_to_keep: int, output_d
 	:param
 	"""
 	inputs = {'assembly': assembly_fasta_file}
-	outputs = {'bundled': f'{os.path.splitext(assembly_fasta_file)[0]}.bundled.{os.path.splitext(assembly_fasta_file)[1]}'}
+	outputs = {'bundled': f'{os.path.splitext(assembly_fasta_file)[0]}.bundled{os.path.splitext(assembly_fasta_file)[1]}',
+			   'bed': f'{os.path.splitext(assembly_fasta_file)[0]}.bundled.bed'}
 	options = {
 		'cores': 1,
 		'memory': '10g',
@@ -706,62 +707,70 @@ def bundle_debris(assembly_fasta_file: str, n_chromosomes_to_keep: int, output_d
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory} ] || mkdir -p {output_directory}
-	
 	awk \
 		-v chromosomes_to_keep={n_chromosomes_to_keep} \
+		-v spacing={n_insertion_size} \
 		'BEGIN{{
 			RS = ">"
 			ORS = ""
 			FS = "\\n"
 			OFS = "\\n"
+			ndebris = 0
+			ngaps = 0
+			start = 0
+			end = 0
+			if (! spacing)
+			{{
+				spacing = 1000
+			}}
 		}}
 		{{
-			ndebris = 0
-			if (NR == 2)
-			{{
-				width = 0
-				for (i = 2; i <= NR; i++)
-					{{
-						if (length(i) > width)
-							{{
-								width = length(i)
-							}}
-					}}
-			}}
 			if (NR > 1 && NR <= chromosomes_to_keep + 1)
 			{{
-				print ">"$0
+				print ">" $1 "\\n"
+				for (i = 2; i <= NF; i++)
+				{{
+					print $i
+				}}
+				print "\\n"
 			}}
 			if (NR > chromosomes_to_keep + 1)
 			{{
+				seqid = $1
 				if (ndebris == 0)
 				{{
-					$1 = ">bundled_debris_sequences"
-					print $1
+					print ">bundled_sequences\\n"
 				}}
-				debris_seq[$1]
-				ndebris += 1
+				ndebris = 1
+				if (NR > chromosomes_to_keep + 2)
+				{{
+					for (i = 1; i <= spacing; i++)
+					{{
+						print "N"
+					}}
+					ngaps += 1
+					end += spacing
+					print "bundled_sequences\\t" start "\\t" end "\\tN_gap_" ngaps "\\n" > "{os.path.splitext(assembly_fasta_file)[0]}.bundled.prog.bed"
+					start = end
+				}}
 				for (i = 2; i <= NF; i++)
 				{{
-					if (length(i) < width)
-					{{
-						filler = ""
-						diff = width - length(i)
-						for (j = 1; j <= diff; j++)
-						{{
-							filler = filler "N"
-						}}
-					}}
-					i = i filler
-					print i
+					end += length($i)
+					print $i
 				}}
+				print "bundled_sequences\\t" start "\\t" end "\\t" seqid "\\n" > "{os.path.splitext(assembly_fasta_file)[0]}.bundled.prog.bed"
+				start = end 
 			}}
+		}}
+		END{{
+			print "\\n"
 		}}' \
 		{assembly_fasta_file} \
-		> {os.path.splitext(assembly_fasta_file)[0]}.bundled.prog.{os.path.splitext(assembly_fasta_file)[1]}
+	| fold \
+		> {os.path.splitext(assembly_fasta_file)[0]}.bundled.prog{os.path.splitext(assembly_fasta_file)[1]}
 	
-	mv {os.path.splitext(assembly_fasta_file)[0]}.bundled.prog.{os.path.splitext(assembly_fasta_file)[1]} {outputs['bundled']}
+	mv {os.path.splitext(assembly_fasta_file)[0]}.bundled.prog{os.path.splitext(assembly_fasta_file)[1]} {outputs['bundled']}
+	mv {os.path.splitext(assembly_fasta_file)[0]}.bundled.prog.bed {outputs['bed']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

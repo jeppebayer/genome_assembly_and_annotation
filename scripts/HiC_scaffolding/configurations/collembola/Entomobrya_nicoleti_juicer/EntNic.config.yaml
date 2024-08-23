@@ -13,12 +13,18 @@ draft_genome_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/old_setup
 # Directory for final output files.
 output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
 # 3D-DNA settings.
-input_size: 10000 # (Default 15000)
-number_of_edit_rounds: 6 # (Default 2)
+3ddna:
+  input_size: 10000 # (Default 15000)
+  number_of_edit_rounds: 6 # (Default 2)
 # Reviewed .assembly file generated from JuiceBox (can be left blank until a reviewed file has been produced).
 reviewed_assembly_file: 
-number_of_chromosomes_to_keep: 7
-# Whether or not to bundle debris sequences into one superscaffold (0 = no, 1 = yes)
-bundle_debris: 1
 # Name of BUSCO lineage dataset to use for analysis.
 busco_dataset_name: arthropoda_odb10
+# Post editing settings.
+post_editing:
+  # The number of chromosomes to leave unaltered after post-editing.
+  number_of_chromosomes_to_keep: 7
+  # Whether or not to bundle debris sequences into one superscaffold (0 = no, 1 = yes).
+  bundle_debris: 1
+  # Number of Ns to insert when bundling debris sequences.
+  insertion_size: 1000

@@ -112,11 +112,14 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
     HIC_READ1: list = HIC_READS['read1']
     HIC_READ2: list = HIC_READS['read2']
     DRAFT_GENOME: str = CONFIG['draft_genome_file']
-    INPUT_SIZE: int = CONFIG['input_size']
-    EDIT_ROUDNS: int = CONFIG['number_of_edit_rounds']
+    SETTINGS_3DDNA: dict = CONFIG['3ddna']
+    INPUT_SIZE: int = SETTINGS_3DDNA['input_size']
+    EDIT_ROUDNS: int = SETTINGS_3DDNA['number_of_edit_rounds']
     REVIEW_FILE: str = CONFIG['reviewed_assembly_file']
-    CHROM_NUM: int = CONFIG['number_of_chromosomes_to_keep']
-    BUNDLE: int = CONFIG['bundle_debris'] if CONFIG['bundle_debris'] else 0
+    POST_EDITING: dict = CONFIG['post_editing']
+    CHROM_NUM: int = POST_EDITING['number_of_chromosomes_to_keep']
+    BUNDLE: int = POST_EDITING['bundle_debris'] if POST_EDITING['bundle_debris'] else 0
+    INSERTION_SIZE: int = POST_EDITING['insertion_size'] if POST_EDITING['insertion_size'] else 1000
     BUSCO: str = CONFIG['busco_dataset_name']
     
     # --------------------------------------------------
@@ -171,6 +174,24 @@ def juicer_hic_scaffolding_workflow(config_file: str = glob.glob('*config.y*ml')
                 final_hic_file=assembly.outputs['final_hic']
             )
         )
+
+        if BUNDLE:
+            bundle_debris = gwf.target_from_template(
+                name=f'bundle_debris',
+                template=bundle_sequences(
+                    assembly_fasta_file=finalize.outputs['fasta'],
+                    n_chromosomes_to_keep=CHROM_NUM,
+                    n_insertion_size=INSERTION_SIZE,
+                )
+            )
+
+            busco_bundle = gwf.target_from_template(
+                name=f'BUSCO_assembly_bundle',
+                template=busco_genome(
+                    genome_assembly_file=bundle_debris.outputs['bundled'],
+                    busco_dataset=BUSCO
+                )
+            )
 
         busco_no_debris = gwf.target_from_template(
             name=f'{species_abbreviation(SPECIES_NAME)}_BUSCO_assembly_no_debris',
