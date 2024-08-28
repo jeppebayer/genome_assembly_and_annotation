@@ -1,0 +1,144 @@
+                            08/28/2024 at 15h30m35s                             
+
+
+ ------------------------------------------------------------------------------
+|   Another GFF Analysis Toolkit (AGAT) - Version: v1.2.0                      |
+|   https://github.com/NBISweden/AGAT                                          |
+|   National Bioinformatics Infrastructure Sweden (NBIS) - www.nbis.se         |
+ ------------------------------------------------------------------------------
+                                        
+                                       
+                          ------ Start parsing ------                           
+-------------------------- parse options and metadata --------------------------
+=> Accessing the feature_levels YAML file
+Using standard /home/jepe/miniconda3/envs/assembly/lib/perl5/site_perl/auto/share/dist/AGAT/feature_levels.yaml file
+=> Attribute used to group features when no Parent/ID relationship exists (i.e common tag):
+	* locus_tag
+	* gene_id
+=> merge_loci option deactivated
+=> Machine information:
+	This script is being run by perl v5.32.1
+	Bioperl location being used: /home/jepe/miniconda3/envs/assembly/lib/perl5/site_perl/Bio/
+	Operating system being used: linux 
+=> Accessing Ontology
+	No ontology accessible from the gff file header!
+	We use the SOFA ontology distributed with AGAT:
+		/home/jepe/miniconda3/envs/assembly/lib/perl5/site_perl/auto/share/dist/AGAT/so.obo
+	Read ontology /home/jepe/miniconda3/envs/assembly/lib/perl5/site_perl/auto/share/dist/AGAT/so.obo:
+		4 root terms, and 2596 total terms, and 1516 leaf terms
+	Filtering ontology:
+The feature type (3rd column) is constrained to be either a term from the Sequence Ontology or an SO accession number. The latter alternative is distinguished using the syntax SO:000000. In either case, it must be sequence_feature (SO:0000110) or an is_a child of it.
+We filter the ontology to apply this rule.		We found 1861 terms that are sequence_feature or is_a child of it.
+--------------------------------- parsing file ---------------------------------
+=> Number of line in file: 204287
+=> Number of comment lines: 0
+=> Fasta included: No
+=> Number of features lines: 204287
+=> Number of feature type (3rd column): 8
+	* Level1: 1 => gene
+	* level2: 2 => transcript mRNA
+	* level3: 5 => stop_codon exon CDS intron start_codon
+	* unknown: 0 => 
+There is a problem we found several formats in this file: 1,2
+Let's see what we can do...
+=> Version of the Bioperl GFF parser selected by AGAT: 2
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	5751	6143	0.76	-	.	ID "g1.t1" 
+WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
+HiC_scaffold_1	AUGUSTUS	transcript	5751	6143	0.76	-	.	ID "g1.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	7526	8200	1	+	.	ID "g2.t1" 
+WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
+HiC_scaffold_1	AUGUSTUS	transcript	7526	8200	1	+	.	ID "g2.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	63103	66486	0.59	-	.	ID "g3.t1" 
+WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
+HiC_scaffold_1	AUGUSTUS	transcript	63103	66486	0.59	-	.	ID "g3.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	97973	98425	0.99	+	.	ID "g4.t1" 
+WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
+HiC_scaffold_1	AUGUSTUS	transcript	97973	98425	0.99	+	.	ID "g4.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	147208	147555	0.97	+	.	ID "g5.t1" 
+WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
+HiC_scaffold_1	AUGUSTUS	transcript	147208	147555	0.97	+	.	ID "g5.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	163316	163516	0.52	-	.	ID "g6.t1" 
+WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
+HiC_scaffold_1	AUGUSTUS	transcript	163316	163516	0.52	-	.	ID "g6.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	227526	227816	0.92	+	.	ID "g7.t1" 
+WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
+HiC_scaffold_1	AUGUSTUS	transcript	227526	227816	0.92	+	.	ID "g7.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	235054	235872	0.96	-	.	ID "g8.t1" 
+WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
+HiC_scaffold_1	AUGUSTUS	transcript	235054	235872	0.96	-	.	ID "g8.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	244412	244690	0.68	-	.	ID "g9.t1" 
+WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
+HiC_scaffold_1	AUGUSTUS	transcript	244412	244690	0.68	-	.	ID "g9.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	297204	297455	1	+	.	ID "g10.t1" 
+WARNING level2: No Parent attribute found  ************** Too much WARNING message we skip the next **************
+WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
+HiC_scaffold_1	AUGUSTUS	transcript	297204	297455	1	+	.	ID "g10.t1" 
+WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus.  ************** Too much WARNING message we skip the next **************
+14656 warning messages: WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. 
+14656 warning messages: WARNING level2: No Parent attribute found 
+                  ------ End parsing (done in 15 second) ------                 
+
+
+                           ------ Start checks ------                           
+---------------------------- Check1: feature types -----------------------------
+----------------------------------- ontology -----------------------------------
+All feature types in agreement with the Ontology.
+------------------------------------- agat -------------------------------------
+AGAT can deal with all the encountered feature types (3rd column)
+------------------------------ done in 0 seconds -------------------------------
+
+------------------------------ Check2: duplicates ------------------------------
+None found
+------------------------------ done in 0 seconds -------------------------------
+
+-------------------------- Check3: sequential bucket ---------------------------
+Nothing to check as sequential bucket!
+------------------------------ done in 0 seconds -------------------------------
+
+--------------------------- Check4: l2 linked to l3 ----------------------------
+No problem found
+------------------------------ done in 0 seconds -------------------------------
+
+--------------------------- Check5: l1 linked to l2 ----------------------------
+No problem found
+------------------------------ done in 0 seconds -------------------------------
+
+--------------------------- Check6: remove orphan l1 ---------------------------
+We remove only those not supposed to be orphan
+None found
+------------------------------ done in 0 seconds -------------------------------
+
+------------------------- Check7: all level3 locations -------------------------
+------------------------------ done in 3 seconds -------------------------------
+
+------------------------------ Check8: check cds -------------------------------
+No problem found
+------------------------------ done in 0 seconds -------------------------------
+
+----------------------------- Check9: check exons ------------------------------
+No exons created
+No exons locations modified
+No supernumerary exons removed
+No level2 locations modified
+------------------------------ done in 2 seconds -------------------------------
+
+----------------------------- Check10: check utrs ------------------------------
+No UTRs created
+No UTRs locations modified
+No supernumerary UTRs removed
+------------------------------ done in 1 seconds -------------------------------
+
+------------------------ Check11: all level2 locations -------------------------
+No problem found
+------------------------------ done in 1 seconds -------------------------------
+
+------------------------ Check12: all level1 locations -------------------------
+No problem found
+------------------------------ done in 1 seconds -------------------------------
+
+---------------------- Check13: remove identical isoforms ----------------------
+None found
+------------------------------ done in 0 seconds -------------------------------
+                  ------ End checks (done in 8 second) ------                   
+
+
