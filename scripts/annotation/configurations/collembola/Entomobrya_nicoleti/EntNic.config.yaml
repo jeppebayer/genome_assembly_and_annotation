@@ -14,10 +14,10 @@ busco_dataset_name: arthropoda_odb10
 braker_setting: 2
 # 0 & 1: List of path to RNA sequence files (read 1 & read 2).
 rna_sequence_files:
-- /faststorage/project/EcoGenetics/BACKUP/RNA_data/Entomobrya_nicoleti/ENTNIC_RNA_RDJ_1.fq.gz
-- /faststorage/project/EcoGenetics/BACKUP/RNA_data/Entomobrya_nicoleti/ENTNIC_RNA_RDJ_2.fq.gz
+- /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/rna/Entomobrya_nicoleti/ENTNIC_RNA_RDJ_1.fq.gz
+- /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/rna/Entomobrya_nicoleti/ENTNIC_RNA_RDJ_2.fq.gz
 # 1 & 2: Path to protein database file in FASTA format.
-protein_database_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/proteinDB/EG_OrcVil_14022024_genomic.protein.fasta
+protein_database_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/proteinDB/GCA_001718145.1_ASM171814v1_genomic.protein.fasta
 # Alternative if desired database does not exist.
 # 1 & 2: Make protein database file from genome and annotation file.
 referene_genome_file: 

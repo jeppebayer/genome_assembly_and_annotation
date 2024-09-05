@@ -1,4 +1,4 @@
-                            06/24/2024 at 14h54m30s                             
+                            09/05/2024 at 13h51m00s                             
 
 
  ------------------------------------------------------------------------------
@@ -30,53 +30,53 @@ Using standard /home/jepe/miniconda3/envs/assembly/lib/perl5/site_perl/auto/shar
 The feature type (3rd column) is constrained to be either a term from the Sequence Ontology or an SO accession number. The latter alternative is distinguished using the syntax SO:000000. In either case, it must be sequence_feature (SO:0000110) or an is_a child of it.
 We filter the ontology to apply this rule.		We found 1861 terms that are sequence_feature or is_a child of it.
 --------------------------------- parsing file ---------------------------------
-=> Number of line in file: 451532
+=> Number of line in file: 625949
 => Number of comment lines: 0
 => Fasta included: No
-=> Number of features lines: 451532
+=> Number of features lines: 625949
 => Number of feature type (3rd column): 7
 	* Level1: 1 => gene
 	* level2: 1 => transcript
-	* level3: 5 => start_codon CDS stop_codon exon intron
+	* level3: 5 => start_codon CDS intron stop_codon exon
 	* unknown: 0 => 
 There is a problem we found several formats in this file: 1,2
 Let's see what we can do...
 => Version of the Bioperl GFF parser selected by AGAT: 2
-WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	26657	27505	1	-	.	ID "g1.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	34983	36217	0.54	-	.	ID "g1.t1" 
 WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
-HiC_scaffold_1	AUGUSTUS	transcript	26657	27505	1	-	.	ID "g1.t1" 
-WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	28488	29306	1	-	.	ID "g2.t1" 
+HiC_scaffold_1	AUGUSTUS	transcript	34983	36217	0.54	-	.	ID "g1.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	38896	39189	0.65	+	.	ID "g2.t1" 
 WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
-HiC_scaffold_1	AUGUSTUS	transcript	28488	29306	1	-	.	ID "g2.t1" 
-WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	37945	38780	0.77	-	.	ID "g3.t1" 
+HiC_scaffold_1	AUGUSTUS	transcript	38896	39189	0.65	+	.	ID "g2.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	40125	40610	0.74	-	.	ID "g3.t1" 
 WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
-HiC_scaffold_1	AUGUSTUS	transcript	37945	38780	0.77	-	.	ID "g3.t1" 
-WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	39551	40257	0.62	-	.	ID "g4.t1" 
+HiC_scaffold_1	AUGUSTUS	transcript	40125	40610	0.74	-	.	ID "g3.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	40681	41172	1	-	.	ID "g4.t1" 
 WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
-HiC_scaffold_1	AUGUSTUS	transcript	39551	40257	0.62	-	.	ID "g4.t1" 
-WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	43151	43969	1	+	.	ID "g5.t1" 
+HiC_scaffold_1	AUGUSTUS	transcript	40681	41172	1	-	.	ID "g4.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	41463	41741	0.42	-	.	ID "g5.t1" 
 WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
-HiC_scaffold_1	AUGUSTUS	transcript	43151	43969	1	+	.	ID "g5.t1" 
-WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	44952	45800	1	+	.	ID "g6.t1" 
+HiC_scaffold_1	AUGUSTUS	transcript	41463	41741	0.42	-	.	ID "g5.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	42395	42697	0.8	-	.	ID "g6.t1" 
 WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
-HiC_scaffold_1	AUGUSTUS	transcript	44952	45800	1	+	.	ID "g6.t1" 
-WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	58332	59779	0.45	-	.	ID "g7.t1" 
+HiC_scaffold_1	AUGUSTUS	transcript	42395	42697	0.8	-	.	ID "g6.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	57659	61817	0.7	+	.	ID "g7.t1" 
 WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
-HiC_scaffold_1	AUGUSTUS	transcript	58332	59779	0.45	-	.	ID "g7.t1" 
-WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	59947	60585	0.9	-	.	ID "g8.t1" 
+HiC_scaffold_1	AUGUSTUS	transcript	57659	61817	0.7	+	.	ID "g7.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	62260	67218	0.94	+	.	ID "g8.t1" 
 WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
-HiC_scaffold_1	AUGUSTUS	transcript	59947	60585	0.9	-	.	ID "g8.t1" 
-WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	60643	61083	0.96	-	.	ID "g9.t1" 
+HiC_scaffold_1	AUGUSTUS	transcript	62260	67218	0.94	+	.	ID "g8.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	67942	70566	0.94	-	.	ID "g9.t1" 
 WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
-HiC_scaffold_1	AUGUSTUS	transcript	60643	61083	0.96	-	.	ID "g9.t1" 
-WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	94044	94268	0.98	-	.	ID "g10.t1" 
+HiC_scaffold_1	AUGUSTUS	transcript	67942	70566	0.94	-	.	ID "g9.t1" 
+WARNING level2: No Parent attribute found @ for the feature: HiC_scaffold_1	AUGUSTUS	transcript	71468	72420	0.37	-	.	ID "g10.t1" 
 WARNING level2: No Parent attribute found  ************** Too much WARNING message we skip the next **************
 WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. @ the feature is:
-HiC_scaffold_1	AUGUSTUS	transcript	94044	94268	0.98	-	.	ID "g10.t1" 
+HiC_scaffold_1	AUGUSTUS	transcript	71468	72420	0.37	-	.	ID "g10.t1" 
 WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus.  ************** Too much WARNING message we skip the next **************
-33509 warning messages: WARNING level2: No Parent attribute found 
-33509 warning messages: WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. 
-                  ------ End parsing (done in 56 second) ------                 
+42379 warning messages: WARNING gff3 reader: Hmmm, be aware that your feature doesn't contain any Parent and locus tag. No worries, we will handle it by considering it as strictly sequential. If you disagree, please provide an ID or a comon tag by locus. 
+42379 warning messages: WARNING level2: No Parent attribute found 
+                  ------ End parsing (done in 44 second) ------                 
 
 
                            ------ Start checks ------                           
@@ -113,17 +113,29 @@ None found
 
 ------------------------------ Check8: check cds -------------------------------
 No problem found
------------------------------- done in 0 seconds -------------------------------
+------------------------------ done in 1 seconds -------------------------------
 
 ----------------------------- Check9: check exons ------------------------------
+Modify the exon exon-43979 LEFT extremity for g11304.t1! From 1401 to 1
+Modify the exon exon-87141 LEFT extremity for g21575.t1! From 2146 to 1
+Modify the exon exon-105492 LEFT extremity for g26665.t1! From 5565 to 1
+Modify the exon exon-24123 RIGHT extremity for g6990.t1! From 58060422 to 58061482
 No exons created
-No exons locations modified
+4 exons locations modified that were wrong
 No supernumerary exons removed
 No level2 locations modified
 ------------------------------ done in 5 seconds -------------------------------
 
 ----------------------------- Check10: check utrs ------------------------------
-No UTRs created
+Create one UTR for g11304.t1
+:HiC_scaffold_3	AUGUSTUS	three_prime_UTR	1	1400	.	-	.	ID "nbis-three_prime_utr-1"  ; Parent "g11304.t1"  ; gene_id g11304 ; transcript_id "g11304.t1" 
+Create one UTR for g21575.t1
+:HiC_scaffold_6	AUGUSTUS	five_prime_UTR	1	2145	.	+	.	ID "nbis-five_prime_utr-1"  ; Parent "g21575.t1"  ; gene_id g21575 ; transcript_id "g21575.t1" 
+Create one UTR for g26665.t1
+:bundled_sequences	AUGUSTUS	five_prime_UTR	1	5564	.	+	.	ID "nbis-five_prime_utr-2"  ; Parent "g26665.t1"  ; gene_id g26665 ; transcript_id "g26665.t1" 
+Create one UTR for g6990.t1
+:HiC_scaffold_1	AUGUSTUS	five_prime_UTR	58060423	58061482	.	-	.	ID "nbis-five_prime_utr-3"  ; Parent "g6990.t1"  ; gene_id g6990 ; transcript_id "g6990.t1" 
+4 UTRs created that were missing
 No UTRs locations modified
 No supernumerary UTRs removed
 ------------------------------ done in 2 seconds -------------------------------
@@ -139,6 +151,6 @@ No problem found
 ---------------------- Check13: remove identical isoforms ----------------------
 None found
 ------------------------------ done in 0 seconds -------------------------------
-                  ------ End checks (done in 22 second) ------                  
+                  ------ End checks (done in 23 second) ------                  
 
 
