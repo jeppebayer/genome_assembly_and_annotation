@@ -358,7 +358,8 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 		   	  'rna': rna_alignment_bam,
 			  'protein': protein_database_file}
 	outputs = {'gtf': f'{output_directory}/braker3/braker.gtf',
-			   'bed': f'{output_directory}/braker3/genes.bed',
+			   'genebed': f'{output_directory}/braker3/genes.bed',
+			   'intergenicbed': f'{output_directory}/braker3//intergenic.bed',
 			   'coding': f'{output_directory}/braker3/braker.codingseq',
 			   'aa': f'{output_directory}/braker3/braker.aa',
 			   'evidence': f'{output_directory}/braker3/hintsfile.gff',
@@ -405,7 +406,30 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 		{outputs['gtf']} \
 		> {output_directory}/braker3/genes.prog.bed
 	
-	mv {output_directory}/braker3/genes.prog.bed {outputs['bed']}
+	bedtools complement \
+		-i {output_directory}/braker3/genes.prog.bed \
+		-g <(awk \
+				'BEGIN{{
+					RS = ">"
+					ORS = "\\n"
+					FS = "\\n"
+					OFS = "\\t"
+				}}
+				{{
+					if (FNR == 1)
+					{{
+						next
+					}}
+					split($1, namearray, " ")
+					chromname = namearray[1]
+					$1 = ""
+					print chromname, length($0) - NF + 1
+				}}' \
+				{genome_assembly_file}) \
+		> {output_directory}/braker3//intergenic.prog.bed
+
+	mv {output_directory}/braker3/genes.prog.bed {outputs['genebed']}
+	mv {output_directory}/braker3//intergenic.prog.bed {outputs['intergenicbed']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
