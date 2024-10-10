@@ -16,7 +16,7 @@ def species_abbreviation(species_name: str) -> str:
 
 ########################## RepeatMasking ##########################
 
-def build_repeatmodeller_database(genome_assembly_file: str, working_directory: str, species_name: str):
+def build_repeatmodeller_database(genome_assembly_file: str, output_directory: str, species_name: str):
 	"""
 	Template: Build ReapeatModeler database from :format:`FASTA` file using :script:`BuildDatabase` from RepeatModeler.
 	
@@ -32,16 +32,15 @@ def build_repeatmodeller_database(genome_assembly_file: str, working_directory: 
 	:param str species_name:
 		Name of species being worked on.
 	"""
-	working_dir = working_directory
 	inputs = {'assembly': genome_assembly_file}
-	outputs = {'db_files': [f'{working_directory}/{species_name.replace(" ", "_")}.nhr',
-						 	f'{working_directory}/{species_name.replace(" ", "_")}.nin',
-						 	f'{working_directory}/{species_name.replace(" ", "_")}.njs',
-						 	f'{working_directory}/{species_name.replace(" ", "_")}.nnd',
-						 	f'{working_directory}/{species_name.replace(" ", "_")}.nni',
-						 	f'{working_directory}/{species_name.replace(" ", "_")}.nog',
-						 	f'{working_directory}/{species_name.replace(" ", "_")}.nsq',
-						 	f'{working_directory}/{species_name.replace(" ", "_")}.translation']}
+	outputs = {'db_files': [f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.nhr',
+						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.nin',
+						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.njs',
+						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.nnd',
+						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.nni',
+						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.nog',
+						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.nsq',
+						 	f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.translation']}
 	options = {
 		'cores': 2,
 		'memory': '30g',
@@ -57,19 +56,30 @@ def build_repeatmodeller_database(genome_assembly_file: str, working_directory: 
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {working_directory} ] || mkdir -p {working_directory}
-
+	[ -d {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")} ] || mkdir -p {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}
+	
+	cd {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}
+	
 	BuildDatabase \
-		-name {species_name.replace(' ', '_')} \
+		-name {species_name.replace(' ', '_')}.prog \
 		-engine rmblast \
 		{genome_assembly_file}
-	
+
+	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nhr {outputs['db_files'][0]}
+	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nin {outputs['db_files'][1]}
+	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.njs {outputs['db_files'][2]}
+	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nnd {outputs['db_files'][3]}
+	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nni {outputs['db_files'][4]}
+	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nog {outputs['db_files'][5]}
+	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nsq {outputs['db_files'][6]}
+	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.translation {outputs['db_files'][7]}
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def repeatmodeler(database: list, working_directory: str, species_name: str):
+def repeatmodeler(database: list, output_directory: str, species_name: str):
 	"""
 	Template: Models repetitive DNA using RepeatModeler. Furthermore adds species code to results and creates separate files of classified and unclassified elements.
 	
@@ -77,25 +87,24 @@ def repeatmodeler(database: list, working_directory: str, species_name: str):
 	
 		inputs = {'database': database}
 		outputs = {'model_result': ['*-families.fa', '*-families.stk', '*-rmod.log'],
-			   'all': '*-families.prefix.fa',
-			   'unknown': '*-families.prefix.unknown.fa',
-			   'known': '*-families.prefix.known.fa'}
+				   'all': '*-families.prefix.fa',
+				   'unknown': '*-families.prefix.unknown.fa',
+				   'known': '*-families.prefix.known.fa'}
 	
 	:param list database:
 		List of files produced by **build_repeatmodeler_database**.
-	:param str working_directory:
+	:param str output_directory:
 		Output directory for files. The script uses it as its working directory thus the name.
 	:param str species_name:
 		Name of species being worked on.
 	"""
-	working_dir = working_directory
 	inputs = {'database': database}
-	outputs = {'model_result': [f'{working_directory}/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-families.fa',
-						 		f'{working_directory}/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-families.stk',
-						 		f'{working_directory}/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-rmod.log'],
-			   'all': f'{working_directory}/{species_name.replace(" ", "_")}-families.prefix.fa',
-			   'unknown': f'{working_directory}/{species_name.replace(" ", "_")}-families.prefix.unknown.fa',
-			   'known': f'{working_directory}/{species_name.replace(" ", "_")}-families.prefix.known.fa'}
+	outputs = {'model_result': [f'{output_directory}/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-families.fa',
+						 		f'{output_directory}/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-families.stk',
+						 		f'{output_directory}/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-rmod.log'],
+			   'all': f'{output_directory}/{species_name.replace(" ", "_")}-families.prefix.fa',
+			   'unknown': f'{output_directory}/{species_name.replace(" ", "_")}-families.prefix.unknown.fa',
+			   'known': f'{output_directory}/{species_name.replace(" ", "_")}-families.prefix.known.fa'}
 	options = {
 		'cores': 32,
 		'memory': '192g',
@@ -111,6 +120,10 @@ def repeatmodeler(database: list, working_directory: str, species_name: str):
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
+	[ -d {output_directory}/RepeatModeler ] || {output_directory}/RepeatModeler
+
+	cd {output_directory}/RepeatModeler
+
 	RepeatModeler \
 		-database ./RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')} \
 		-LTRStruct \
@@ -151,9 +164,9 @@ def repeatmodeler(database: list, working_directory: str, species_name: str):
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(working_dir=working_dir, inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def repeatmasker(genome_assembly_file: str, library_file: str, working_directory: str):
+def repeatmasker(genome_assembly_file: str, library_file: str, output_directory: str, run_name: str):
 	"""
 	Template: Masks repetitive DNA using RepeatMasker and produces :format:`GFF3` annotation file.
 	
@@ -173,14 +186,13 @@ def repeatmasker(genome_assembly_file: str, library_file: str, working_directory
 	:param str run_name:
 		Name to identify the run. Adviced to indicate library file used.
 	"""
-	working_dir = working_directory
 	inputs = {'assembly': genome_assembly_file,
 		   	  'lib': library_file}
-	outputs = {'gff': f'{working_directory}/{os.path.basename(genome_assembly_file)}.repeats.{os.path.basename(working_directory)}.gff',
-			   'repmaskout': [f'{working_directory}/{os.path.basename(genome_assembly_file)}.cat.gz',
-						 	  f'{working_directory}/{os.path.basename(genome_assembly_file)}.masked',
-						 	  f'{working_directory}/{os.path.basename(genome_assembly_file)}.out',
-						 	  f'{working_directory}/{os.path.basename(genome_assembly_file)}.tbl']}
+	outputs = {'gff': f'{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.repeats.{os.path.basename(working_directory)}.gff',
+			   'repmaskout': [f'{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.cat.gz',
+						 	  f'{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.masked',
+						 	  f'{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.out',
+						 	  f'{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.tbl']}
 	options = {
 		'cores': 32,
 		'memory': '192g',
@@ -196,12 +208,12 @@ def repeatmasker(genome_assembly_file: str, library_file: str, working_directory
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {working_directory} ] || mkdir -p {working_directory}
+	[ -d {output_directory}/RepeatMasker/{run_name} ] || mkdir -p {output_directory}/RepeatMasker/{run_name}
 
 	RepeatMasker \
 		-e rmblast \
 		-pa {int(options['cores']/4)} \
-		-dir {working_directory} \
+		-dir {output_directory}/RepeatMasker/{run_name} \
 		-xsmall \
 		-lib {library_file} \
 		{genome_assembly_file}
@@ -221,7 +233,7 @@ def repeatmasker(genome_assembly_file: str, library_file: str, working_directory
 			print $5, "RepeatMasker", "repeat_region", $6, $7, ".", strand, ".", "ID="$15";Name="$10";Class="$11";Family="$11";Target="$10" "start" "$13;
 			}}
 		}}' \
-		{working_directory}/{os.path.basename(genome_assembly_file)}.out \
+		{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.out \
 		> {working_directory}/{os.path.basename(genome_assembly_file)}.repeats.{os.path.basename(working_directory)}.prog.gff
 
 	mv {working_directory}/{os.path.basename(genome_assembly_file)}.repeats.{os.path.basename(working_directory)}.prog.gff {outputs['gff']}

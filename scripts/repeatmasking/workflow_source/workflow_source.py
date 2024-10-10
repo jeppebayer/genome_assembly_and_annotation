@@ -50,7 +50,7 @@ def repeat_masking_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         name=f'{species_abbreviation(SPECIES_NAME)}_build_database',
         template=build_repeatmodeller_database(
             genome_assembly_file=GENOME_ASSEMBLY,
-            working_directory=repeatmodeler_db_dir,
+            output_directory=top_dir,
             species_name=SPECIES_NAME
         )
     )
@@ -59,7 +59,7 @@ def repeat_masking_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         name=f'{species_abbreviation(SPECIES_NAME)}_RepeatModeler',
         template=repeatmodeler(
             database=build_database.outputs['db_files'],
-            working_directory=repeatmodeler_dir,
+            output_directory=top_dir,
             species_name=SPECIES_NAME
         )
     )
