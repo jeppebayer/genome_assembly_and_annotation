@@ -1,0 +1,22 @@
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+species_name: Thymelicus lineola
+# Alternative name of created folder (To be used if something deviating from the automatically generated name is desired)
+alternative_folder_name: Thymelicus lineola x Thymelicus acteon
+# Path to genome assembly file.
+genome_assembly_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/museomics/Thymelicus_lineola/repeatmasking/ThyLin.softmasked.fna
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/museomics
+# Name of BUSCO lineage dataset to use for analysis.
+busco_dataset_name: lepidoptera_odb10
+# Use only RNA data (1), use use only protein database file (2), or both RNA data and protein database (3). (1 | 2 | 3).
+braker_setting: 2
+# 1 & 2: List of path to RNA sequence files (read 1 & read 2).
+rna_sequence_files:
+# 2 & 3: Path to protein database file in FASTA format.
+protein_database_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/museomics/proteinDB/Thymelicus_acteon-GCA_951805285.1-2023_07-pep.fa.gz
+# Alternative if desired database does not exist.
+# 2 & 3: Make protein database file from genome and annotation file.
+referene_genome_file: 
+gtf_genome_annotation_file: 
