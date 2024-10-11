@@ -1,12 +1,22 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,genome_assembly_and_annotation,repeatmasking:workflowconfiguration
 # The name of the relevant project account.
 account: 
 # Name of species being analyzed
 species_name: 
-# Genome assembly files to be masked
+# Alternative name of created folder (To be used if something deviating from the automatically generated name is desired)
+alternative_folder_name: 
+# Genome assembly file to be masked.
 genome_assembly:
-# Repetitive region database file:
-repeat_database:
-# Directory for intermediary files.
+# Settings for repeatmasking.
+repeatmasking_settings:
+  # (int) Do repeatmasking using database (0), RepeatModeler (1) or both (2)
+  mode: 
+  # (str) Name to identify database used. If mode 1 this field can be left blank.
+  database_name: 
+  # (str) Repetitive region database file. If mode 1 this field can be left blank.
+  repeat_database: 
+# (str) Directory for intermediary files.
 working_directory_path: 
-# Directory for final output files.
+# (str) Directory for final output files. (If left empty, output file will be placed within 'working_directory_path').
 output_directory_path: 
