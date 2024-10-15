@@ -99,12 +99,12 @@ def repeatmodeler(database: list, output_directory: str, species_name: str):
 		Name of species being worked on.
 	"""
 	inputs = {'database': database}
-	outputs = {'model_result': [f'{output_directory}/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-families.fa',
-						 		f'{output_directory}/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-families.stk',
-						 		f'{output_directory}/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-rmod.log'],
-			   'all': f'{output_directory}/{species_name.replace(" ", "_")}-families.prefix.fa',
-			   'unknown': f'{output_directory}/{species_name.replace(" ", "_")}-families.prefix.unknown.fa',
-			   'known': f'{output_directory}/{species_name.replace(" ", "_")}-families.prefix.known.fa'}
+	outputs = {'model_result': [f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-families.fa',
+						 		f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-families.stk',
+						 		f'{output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}-rmod.log'],
+			   'all': f'{output_directory}/RepeatModeler/{species_name.replace(" ", "_")}-families.prefix.fa',
+			   'unknown': f'{output_directory}/RepeatModeler/{species_name.replace(" ", "_")}-families.prefix.unknown.fa',
+			   'known': f'{output_directory}/RepeatModeler/{species_name.replace(" ", "_")}-families.prefix.known.fa'}
 	options = {
 		'cores': 32,
 		'memory': '192g',
@@ -135,7 +135,7 @@ def repeatmodeler(database: list, output_directory: str, species_name: str):
 	| awk \
 		-v species_abbreviation={species_abbreviation(species_name)} \
 		'{{
-			print species_abbreviation"_"$0
+			print species_abbreviation "_" $0
 		}}' \
 	| seqkit \
 		tab2fx \

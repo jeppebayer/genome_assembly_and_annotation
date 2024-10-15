@@ -58,7 +58,27 @@ def star_index(genome_assembly_file: str, output_directory: str):
 	[ "$(ls -A {output_directory}/indices)" ] || rm -rf {output_directory}/indices/*
 	cd {output_directory}
 	
-	salength=$(awk 'BEGIN{{genome_length = 0}} {{if ($0 ~ /[^>]/) {{genome_length += length($0) - 1}}}} END{{alt = int(((log(genome_length) / log(2)) / 2) - 1); if (alt < 14) {{print alt}} else {{print 14}}}}' {genome_assembly_file})
+	salength=$(awk \
+		'BEGIN{{
+			genome_length = 0
+		}}
+		{{
+			if ($0 ~ /[^>]/) 
+			{{
+				genome_length += length($0) - 1
+			}}
+		}}
+		END{{
+			alt = int(((log(genome_length) / log(2)) / 2) - 1);
+			if (alt < 14) {{
+				print alt
+			}} 
+			else
+			{{
+				print 14
+			}}
+		}}' \
+		{genome_assembly_file})
 
 	STAR \
 		--runThreadN {options['cores']} \
@@ -124,7 +144,7 @@ def star_alignment(rna_sequence_files: list, star_index_directory: str, output_d
 		--runMode alignReads \
 		--genomeDir {star_index_directory} \
 		--readFilesIn {" ".join(rna_sequence_files)} \
-		--readFilesCommand zcat \
+		--readFilesCommand {'zcat' if rna_sequence_files[0].endswith('.gz') else '-'} \
 		--outFileNamePrefix {output_directory}/rna_alignment/{species_abbreviation(species_name)}_ \
 		--outSAMtype BAM SortedByCoordinate \
 		--outSAMstrandField intronMotif \
@@ -183,8 +203,10 @@ def make_protein_db(reference_genome_file: str, gtf_annotation_file: str, output
 		--output {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta
 	
 	awk \
-		'{{gsub(/\s$/, "");
-		print $0}}' \
+		'{{
+			gsub(/\\s$/, "");
+			print $0
+		}}' \
 		{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta \
 		> {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.prog.fasta
 	
@@ -261,9 +283,15 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 		--PROTHINT_PATH {prothint}
 	
 	awk \
-		'BEGIN{{FS=OFS="\\t"}} 
-		{{if ($3 == "gene") 
-			{{print $1, $4-1, $5}}}}' \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}} 
+		{{
+			if ($3 == "gene") 
+			{{
+				print $1, $4-1, $5
+			}}
+		}}' \
 		{outputs['gtf']} \
 		> {output_directory}/braker1/genes.prog.bed
 	
@@ -317,8 +345,6 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 	else
 		mkdir -p {output_directory}/braker2
 	fi
-	
-	[ -e  ]
 
 	braker.pl \
 		--genome {genome_assembly_file} \
@@ -330,9 +356,15 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 		--PROTHINT_PATH {prothint}
 	
 	awk \
-		'BEGIN{{FS=OFS="\\t"}} 
-		{{if ($3 == "gene") 
-			{{print $1, $4-1, $5}}}}' \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}} 
+		{{
+			if ($3 == "gene") 
+			{{
+				print $1, $4-1, $5
+			}}
+		}}' \
 		{outputs['gtf']} \
 		> {output_directory}/braker2/genes.prog.bed
 	
@@ -401,8 +433,12 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 	
 	awk \
 		'BEGIN{{FS=OFS="\\t"}} 
-		{{if ($3 == "gene") 
-			{{print $1, $4-1, $5}}}}' \
+		{{
+			if ($3 == "gene") 
+			{{
+				print $1, $4-1, $5
+			}}
+		}}' \
 		{outputs['gtf']} \
 		> {output_directory}/braker3/genes.prog.bed
 	
