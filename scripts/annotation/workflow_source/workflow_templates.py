@@ -243,7 +243,8 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 	inputs = {'assembly': genome_assembly_file,
 		   	  'rna': rna_alignment_bam}
 	outputs = {'gtf': f'{output_directory}/braker1/braker.gtf',
-			   'bed': f'{output_directory}/braker1/genes.bed',
+			   'genebed': f'{output_directory}/braker1/genes.bed',
+			   'integenicbed': f'{output_directory}/braker1/intergenic.bed',
 			   'coding': f'{output_directory}/braker1/braker.codingseq',
 			   'aa': f'{output_directory}/braker1/braker.aa',
 			   'evidence': f'{output_directory}/braker1/hintsfile.gff',
@@ -295,7 +296,30 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 		{outputs['gtf']} \
 		> {output_directory}/braker1/genes.prog.bed
 	
-	mv {output_directory}/braker1/genes.prog.bed {outputs['bed']}
+	bedtools complement \
+		-i {output_directory}/braker1/genes.prog.bed \
+		-g <(awk \
+				'BEGIN{{
+					RS = ">"
+					ORS = "\\n"
+					FS = "\\n"
+					OFS = "\\t"
+				}}
+				{{
+					if (FNR == 1)
+					{{
+						next
+					}}
+					split($1, namearray, " ")
+					chromname = namearray[1]
+					$1 = ""
+					print chromname, length($0) - NF + 1
+				}}' \
+				{genome_assembly_file}) \
+		> {output_directory}/braker1/intergenic.prog.bed
+	
+	mv {output_directory}/braker1/genes.prog.bed {outputs['genebed']}
+	mv {output_directory}/braker1/intergenic.prog.bed {outputs['intergenicbed']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -316,7 +340,8 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 	inputs = {'assembly': genome_assembly_file,
 			  'protein': protein_database_file}
 	outputs = {'gtf': f'{output_directory}/braker2/braker.gtf',
-			   'bed': f'{output_directory}/braker2/genes.bed',
+			   'genebed': f'{output_directory}/braker2/genes.bed',
+			   'intergenicbed': f'{output_directory}/braker2/intergenic.bed',
 			   'coding': f'{output_directory}/braker2/braker.codingseq',
 			   'aa': f'{output_directory}/braker2/braker.aa',
 			   'evidence': f'{output_directory}/braker2/hintsfile.gff',
@@ -348,7 +373,7 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 
 	braker.pl \
 		--genome {genome_assembly_file} \
-		--prot_seq {protein_database_file} \
+		--prot_seq {'<(zcat ' + protein_database_file + ')' if protein_database_file.endswith('.gz') else protein_database_file} \
 		--species {species_name.replace(' ', '_')}_{date.today().day}-{date.today().month}-{date.today().year} \
 		--threads {options['cores']} \
 		--workingdir {output_directory}/braker2 \
@@ -368,7 +393,30 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 		{outputs['gtf']} \
 		> {output_directory}/braker2/genes.prog.bed
 	
-	mv {output_directory}/braker2/genes.prog.bed {outputs['bed']}
+	bedtools complement \
+		-i {output_directory}/braker2/genes.prog.bed \
+		-g <(awk \
+				'BEGIN{{
+					RS = ">"
+					ORS = "\\n"
+					FS = "\\n"
+					OFS = "\\t"
+				}}
+				{{
+					if (FNR == 1)
+					{{
+						next
+					}}
+					split($1, namearray, " ")
+					chromname = namearray[1]
+					$1 = ""
+					print chromname, length($0) - NF + 1
+				}}' \
+				{genome_assembly_file}) \
+		> {output_directory}/braker2/intergenic.prog.bed
+	
+	mv {output_directory}/braker2/genes.prog.bed {outputs['genebed']}
+	mv {output_directory}/braker2/intergenic.prog.bed {outputs['intergenicbed']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -391,7 +439,7 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 			  'protein': protein_database_file}
 	outputs = {'gtf': f'{output_directory}/braker3/braker.gtf',
 			   'genebed': f'{output_directory}/braker3/genes.bed',
-			   'intergenicbed': f'{output_directory}/braker3//intergenic.bed',
+			   'intergenicbed': f'{output_directory}/braker3/intergenic.bed',
 			   'coding': f'{output_directory}/braker3/braker.codingseq',
 			   'aa': f'{output_directory}/braker3/braker.aa',
 			   'evidence': f'{output_directory}/braker3/hintsfile.gff',
@@ -424,7 +472,7 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 	braker.pl \
 		--genome {genome_assembly_file} \
 		--bam {rna_alignment_bam} \
-		--prot_seq {protein_database_file} \
+		--prot_seq {'<(zcat ' + protein_database_file + ')' if protein_database_file.endswith('.gz') else protein_database_file} \
 		--species {species_name.replace(' ', '_')}_{date.today().day}-{date.today().month}-{date.today().year} \
 		--threads {options['cores']} \
 		--workingdir {output_directory}/braker3 \
@@ -432,7 +480,9 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 		--PROTHINT_PATH {prothint}
 	
 	awk \
-		'BEGIN{{FS=OFS="\\t"}} 
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}} 
 		{{
 			if ($3 == "gene") 
 			{{
@@ -462,10 +512,10 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 					print chromname, length($0) - NF + 1
 				}}' \
 				{genome_assembly_file}) \
-		> {output_directory}/braker3//intergenic.prog.bed
+		> {output_directory}/braker3/intergenic.prog.bed
 
 	mv {output_directory}/braker3/genes.prog.bed {outputs['genebed']}
-	mv {output_directory}/braker3//intergenic.prog.bed {outputs['intergenicbed']}
+	mv {output_directory}/braker3/intergenic.prog.bed {outputs['intergenicbed']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
