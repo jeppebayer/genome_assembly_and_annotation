@@ -58,17 +58,17 @@ def hifiadapterfilt(pacbio_hifi_files: list, output_directory: str, species_name
 
 	cd {output_directory}/HiFiAdapterFilt
 
-	bgzip \
-		-c \
-		{infile} \
+	bgzip \\
+		-c \\
+		{infile} \\
 		> prog.fastq.gz
 
 	export PATH=$PATH:{hifiadapterfilt_directory}
 	export PATH=$PATH:{hifiadapterfilt_directory}/DB
 
-	bash {hifiadapterfilt_directory}/pbadapterfilt.sh \
-		-t {options['cores']} \
-		-p prog \
+	bash {hifiadapterfilt_directory}/pbadapterfilt.sh \\
+		-t {options['cores']} \\
+		-p prog \\
 		-o {output_directory}/HiFiAdapterFilt
 
 	mv {output_directory}/HiFiAdapterFilt/prog.filt.fastq.gz {outputs['filt']}
@@ -128,12 +128,12 @@ def hifiasm_primary(hifi_sequence_file: str, output_directory: str, species_name
 	
 	[ -d {output_directory}/hifiasm_primary ] || mkdir -p {output_directory}/hifiasm_primary
 	
-	hifiasm \
-		-t {options['cores']} \
-		-s {similarity_threshold} \
-		-l {purge_level} \
-		--primary \
-		-o {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog \
+	hifiasm \\
+		-t {options['cores']} \\
+		-s {similarity_threshold} \\
+		-l {purge_level} \\
+		--primary \\
+		-o {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog \\
 		{hifi_sequence_file}
 	
 	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.p_ctg.gfa {outputs['primary'][0]}
@@ -152,18 +152,18 @@ def hifiasm_primary(hifi_sequence_file: str, output_directory: str, species_name
 	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.ovlp.reverse.bin {outputs['other'][1]}
 	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.ovlp.source.bin {outputs['other'][2]}
 	
-	awk \
+	awk \\
         'BEGIN{{FS="\\t"}}
         {{if ($0 ~ /^S/)
             {{print ">"$2"\\n"$3}}
-		}}' \
-        {outputs['primary'][0]} \
-    | fold \
+		}}' \\
+        {outputs['primary'][0]} \\
+    | fold \\
         > {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.p_ctg.prog.fasta
 
     mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.p_ctg.prog.fasta {outputs['fasta']}
 
-	awk \
+	awk \\
 		'BEGIN{{OFS="\\t"}}
 		{{if ($0 ~ /^>/)
 			{{if (sequence_length)
@@ -179,8 +179,8 @@ def hifiasm_primary(hifi_sequence_file: str, output_directory: str, species_name
 		END{{if (sequence_length)
 			{{print sequence_name, sequence_length}}
 		print sequence_number"_sequences", total_length + sequence_length
-		}}' \
-		{outputs['fasta']} \
+		}}' \\
+		{outputs['fasta']} \\
 		> {output_directory}/hifiasm_primary/sequences.tsv
 
 	last_line=($(tail -n 1 {output_directory}/hifiasm_primary/sequences.tsv))
@@ -246,13 +246,13 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 	
 	[ -d {output_directory}/hifiasm_hic ] || mkdir -p {output_directory}/hifiasm_hic
 	
-	hifiasm \
-		-t {options['cores']} \
-		-s {similarity_threshold} \
-		-l {purge_level} \
-		-o {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog \
-		--h1 {hic_sequence_files[0]} \
-		--h2 {hic_sequence_files[1]} \
+	hifiasm \\
+		-t {options['cores']} \\
+		-s {similarity_threshold} \\
+		-l {purge_level} \\
+		-o {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog \\
+		--h1 {hic_sequence_files[0]} \\
+		--h2 {hic_sequence_files[1]} \\
 		{hifi_sequence_file}
 	
 	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.p_ctg.gfa {outputs['primary'][0]}
@@ -276,37 +276,37 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.lk.bin {outputs['other'][3]}
 	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.tlb.bin {outputs['other'][4]}
 	
-	awk \
+	awk \\
         'BEGIN{{FS="\\t"}}
         {{if ($0 ~ /^S/)
-            {{print ">"$2"\\n"$3}}}}' \
-        {outputs['primary'][0]} \
-    | fold \
+            {{print ">"$2"\\n"$3}}}}' \\
+        {outputs['primary'][0]} \\
+    | fold \\
         > {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_ctg.prog.fasta
 
     mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_ctg.prog.fasta {outputs['fasta'][0]}
 
-	awk \
+	awk \\
         'BEGIN{{FS="\\t"}}
         {{if ($0 ~ /^S/)
-            {{print ">"$2"\\n"$3}}}}' \
-        {outputs['hap1'][0]} \
-    | fold \
+            {{print ">"$2"\\n"$3}}}}' \\
+        {outputs['hap1'][0]} \\
+    | fold \\
         > {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap1.p_ctg.prog.fasta
 
     mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap1.p_ctg.prog.fasta {outputs['fasta'][1]}
 
-	awk \
+	awk \\
         'BEGIN{{FS="\\t"}}
         {{if ($0 ~ /^S/)
-            {{print ">"$2"\\n"$3}}}}' \
-        {outputs['hap2'][0]} \
-    | fold \
+            {{print ">"$2"\\n"$3}}}}' \\
+        {outputs['hap2'][0]} \\
+    | fold \\
         > {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap2.p_ctg.prog.fasta
 
     mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap2.p_ctg.prog.fasta {outputs['fasta'][2]}
 	
-	awk \
+	awk \\
 		'BEGIN{{OFS="\\t"}}
 		{{if ($0 ~ /^>/)
 			{{if (sequence_length)
@@ -322,15 +322,15 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 		END{{if (sequence_length)
 			{{print sequence_name, sequence_length}}
 		print sequence_number"_sequences", total_length + sequence_length
-		}}' \
-		{outputs['fasta'][0]} \
+		}}' \\
+		{outputs['fasta'][0]} \\
 		> {output_directory}/hifiasm_hic/sequences_primary.tsv
 
 	last_line=($(tail -n 1 {output_directory}/hifiasm_hic/sequences_primary.tsv))
 
 	mv {output_directory}/hifiasm_hic/sequences_primary.tsv {output_directory}/hifiasm_hic/sequences_primary_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
 
-	awk \
+	awk \\
 		'BEGIN{{OFS="\\t"}}
 		{{if ($0 ~ /^>/)
 			{{if (sequence_length)
@@ -346,15 +346,15 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 		END{{if (sequence_length)
 			{{print sequence_name, sequence_length}}
 		print sequence_number"_sequences", total_length + sequence_length
-		}}' \
-		{outputs['fasta'][1]} \
+		}}' \\
+		{outputs['fasta'][1]} \\
 		> {output_directory}/hifiasm_hic/sequences_hap1.tsv
 
 	last_line=($(tail -n 1 {output_directory}/hifiasm_hic/sequences_hap1.tsv))
 
 	mv {output_directory}/hifiasm_hic/sequences_hap1.tsv {output_directory}/hifiasm_hic/sequences_hap1_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
 
-	awk \
+	awk \\
 		'BEGIN{{OFS="\\t"}}
 		{{if ($0 ~ /^>/)
 			{{if (sequence_length)
@@ -370,8 +370,8 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 		END{{if (sequence_length)
 			{{print sequence_name, sequence_length}}
 		print sequence_number"_sequences", total_length + sequence_length
-		}}' \
-		{outputs['fasta'][2]} \
+		}}' \\
+		{outputs['fasta'][2]} \\
 		> {output_directory}/hifiasm_hic/sequences_hap2.tsv
 
 	last_line=($(tail -n 1 {output_directory}/hifiasm_hic/sequences_hap2.tsv))
@@ -416,16 +416,16 @@ def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_p
 	
 	cd {os.path.dirname(genome_assembly_file)}
 
-	busco \
-		--cpu {options['cores']} \
-		--force \
-		--in {genome_assembly_file} \
-		--mode genome \
-		--out busco_{os.path.basename(genome_assembly_file)} \
-		--out_path {os.path.dirname(genome_assembly_file)} \
-		--download_path {busco_download_path} \
-		--lineage {busco_download_path}/lineages/{busco_dataset} \
-		--tar \
+	busco \\
+		--cpu {options['cores']} \\
+		--force \\
+		--in {genome_assembly_file} \\
+		--mode genome \\
+		--out busco_{os.path.basename(genome_assembly_file)} \\
+		--out_path {os.path.dirname(genome_assembly_file)} \\
+		--download_path {busco_download_path} \\
+		--lineage {busco_download_path}/lineages/{busco_dataset} \\
+		--tar \\
 		--offline
 
 	echo "END: $(date)"
@@ -463,15 +463,15 @@ def busco_protein(protein_sequence_file: str, busco_dataset: str, busco_download
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	busco \
-		--cpu {options['cores']} \
-		--force \
-		--in {protein_sequence_file} \
-		--mode proteins \
-		--out busco_{os.path.basename(protein_sequence_file)} \
-		--out_path {os.path.dirname(protein_sequence_file)} \
-		--download_path {busco_download_path} \
-		--lineage {busco_download_path}/lineages/{busco_dataset} \
+	busco \\
+		--cpu {options['cores']} \\
+		--force \\
+		--in {protein_sequence_file} \\
+		--mode proteins \\
+		--out busco_{os.path.basename(protein_sequence_file)} \\
+		--out_path {os.path.dirname(protein_sequence_file)} \\
+		--download_path {busco_download_path} \\
+		--lineage {busco_download_path}/lineages/{busco_dataset} \\
 		--tar
 	
 	echo "END: $(date)"
@@ -512,29 +512,29 @@ def merqury(genome_assembly_file: str, pacbio_hifi_reads: str, output_directory:
 	
 	cd {output_directory}/merqury
 
-	kmersize="$( \
-	"$(dirname "$(dirname "$(which merqury.sh)")")"/share/merqury/best_k.sh \
-		$(seqtk size {genome_assembly_file} | cut -f 2) \
-	| awk \
+	kmersize="$( \\
+	"$(dirname "$(dirname "$(which merqury.sh)")")"/share/merqury/best_k.sh \\
+		$(seqtk size {genome_assembly_file} | cut -f 2) \\
+	| awk \\
 		'BEGIN{{FS=OFS=" "}}
 		{{if (NR == 3)
 			if (($0 - int($0)) >= 0.5)
 			{{print int($0) + 1; exit}}
 		else
 			{{print int($0); exit}}
-		}}' \
+		}}' \\
 	)"
 
-	meryl count \
-		memory={options['memory']} \
-		threads={options['cores']} \
-		k="$kmersize" \
-		output {os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}.meryl \
+	meryl count \\
+		memory={options['memory']} \\
+		threads={options['cores']} \\
+		k="$kmersize" \\
+		output {os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}.meryl \\
 		{pacbio_hifi_reads}
 
-	merqury.sh \
-		{os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}.meryl \
-		{genome_assembly_file} \
+	merqury.sh \\
+		{os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}.meryl \\
+		{genome_assembly_file} \\
 		{os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}
 	
 	echo "END: $(date)"
@@ -576,20 +576,20 @@ def blobtools_blobdir(genome_assembly_file: str, species_name: str, blastn_resul
 	
 	[ -d {os.path.dirname(genome_assembly_file)}/qc/blobtools ] || mkdir -p {os.path.dirname(genome_assembly_file)}/qc/blobtools
 
-	blobtools create \
-		--threads {options['cores']} \
-		--key assembly.alias="{species_abbreviation(species_name)}" \
-		--key record_type="scaffold" \
-		--key taxon.name="{species_name}" \
-		--key taxon.genus="{species_name.split(sep=" ")[0]}" \
-		--key taxon.species="{species_name}" \
-		--fasta {genome_assembly_file} \
-		--hits {blastn_result_file} \
-		--hits {diamond_result_file} \
-		--taxrule bestsumorder \
-		--taxdump {ncbi_taxdump_directory} \
-		--cov {coverage_alignment_file} \
-		--busco {busco_full_table_file} \
+	blobtools create \\
+		--threads {options['cores']} \\
+		--key assembly.alias="{species_abbreviation(species_name)}" \\
+		--key record_type="scaffold" \\
+		--key taxon.name="{species_name}" \\
+		--key taxon.genus="{species_name.split(sep=" ")[0]}" \\
+		--key taxon.species="{species_name}" \\
+		--fasta {genome_assembly_file} \\
+		--hits {blastn_result_file} \\
+		--hits {diamond_result_file} \\
+		--taxrule bestsumorder \\
+		--taxdump {ncbi_taxdump_directory} \\
+		--cov {coverage_alignment_file} \\
+		--busco {busco_full_table_file} \\
 		{os.path.dirname(genome_assembly_file)}/qc/blobtools/blobtools_{os.path.basename(genome_assembly_file)}
 	
 	echo "END: $(date)"
@@ -627,15 +627,15 @@ def blobtools_blastn(genome_assembly_file: str, blast_database: str = "/faststor
 	
 	[ -d {os.path.dirname(genome_assembly_file)}/qc/blastn ] || mkdir -p {os.path.dirname(genome_assembly_file)}/qc/blastn
 	
-	blastn \
-		-num_threads {options['cores']} \
-		-task megablast \
-		-db {blast_database} \
-		-query {genome_assembly_file} \
-		-outfmt "6 qseqid staxids bitscore std" \
-		-max_target_seqs 10 \
-		-max_hsps 1 \
-		-evalue 1e-25 \
+	blastn \\
+		-num_threads {options['cores']} \\
+		-task megablast \\
+		-db {blast_database} \\
+		-query {genome_assembly_file} \\
+		-outfmt "6 qseqid staxids bitscore std" \\
+		-max_target_seqs 10 \\
+		-max_hsps 1 \\
+		-evalue 1e-25 \\
 		-out {os.path.dirname(genome_assembly_file)}/qc/blastn/{os.path.basename(genome_assembly_file)}.blast.prog.out
 	
 	mv {os.path.dirname(genome_assembly_file)}/qc/blastn/{os.path.basename(genome_assembly_file)}.blast.prog.out {outputs['blast']}
@@ -675,14 +675,14 @@ def blobtools_diamond(genome_assembly_file: str, diamond_database_file: str = "/
 	
 	[ -d {os.path.dirname(genome_assembly_file)}/qc/diamond ] || mkdir -p {os.path.dirname(genome_assembly_file)}/qc/diamond
 	
-	diamond blastx \
-		--threads {options['cores']} \
-		--db {diamond_database_file} \
-		--outfmt 6 qseqid staxids bitscore qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore \
-		--sensitive \
-		--max-target-seqs 1 \
-		--evalue 1e-25 \
-		--query {genome_assembly_file} \
+	diamond blastx \\
+		--threads {options['cores']} \\
+		--db {diamond_database_file} \\
+		--outfmt 6 qseqid staxids bitscore qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore \\
+		--sensitive \\
+		--max-target-seqs 1 \\
+		--evalue 1e-25 \\
+		--query {genome_assembly_file} \\
 		> {os.path.dirname(genome_assembly_file)}/qc/diamond/{os.path.basename(genome_assembly_file)}.diamond.prog.out
 	
 	mv {os.path.dirname(genome_assembly_file)}/qc/diamond/{os.path.basename(genome_assembly_file)}.diamond.prog.out {outputs['diamond']}
@@ -724,21 +724,21 @@ def blobtools_coverage(genome_assembly_file: str, pacbio_hifi_reads: str):
 	
 	[ -d {os.path.dirname(genome_assembly_file)}/qc/coverage ] || mkdir -p {os.path.dirname(genome_assembly_file)}/qc/coverage
 	
-	minimap2 \
-		-x map-hifi \
-		-t {options['cores']} \
-		-a \
-		{genome_assembly_file} \
-		{pacbio_hifi_reads} \
-	| samtools sort \
-		--threads {options['cores'] - 1} \
-		--output-fmt BAM \
+	minimap2 \\
+		-x map-hifi \\
+		-t {options['cores']} \\
+		-a \\
+		{genome_assembly_file} \\
+		{pacbio_hifi_reads} \\
+	| samtools sort \\
+		--threads {options['cores'] - 1} \\
+		--output-fmt BAM \\
 		-o {os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam
 	
-	samtools index \
-		--threads {options['cores'] - 1} \
-		--csi \
-		--output {os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.csi \
+	samtools index \\
+		--threads {options['cores'] - 1} \\
+		--csi \\
+		--output {os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.csi \\
 		{os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam
 	
 	echo "END: $(date)"
@@ -784,18 +784,18 @@ def purge_dups_1_map_hifi_to_genome(gemone_assembly_file: str, hifi_sequence_fil
 	
 	[ -d {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments ] || mkdir -p {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments
 	
-	minimap2 \
-		-x map-hifi \
-		-t {options['cores']} \
-		{gemone_assembly_file} \
-		{hifi_sequence_file} \
-	| gzip \
-		-c \
-		- \
+	minimap2 \\
+		-x map-hifi \\
+		-t {options['cores']} \\
+		{gemone_assembly_file} \\
+		{hifi_sequence_file} \\
+	| gzip \\
+		-c \\
+		- \\
 		> {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.prog.paf.gz
 	
-	pbcstat \
-		-O {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/ \
+	pbcstat \\
+		-O {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/ \\
 		{output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.prog.paf.gz
 	
 	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.prog.paf.gz {outputs['paf']}
@@ -840,22 +840,22 @@ def purge_dups_2_map_to_self(genome_assembly_file: str, output_directory: str, s
 	
 	[ -d {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments ] || mkdir -p {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments
 	
-	split_fa \
-		{genome_assembly_file} \
+	split_fa \\
+		{genome_assembly_file} \\
 		> {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.split.prog.fasta
 	
 	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.split.prog.fasta {outputs['split']}
 
-	minimap2 \
-		-x asm5 \
-		-t {options['cores']} \
-		-D \
-		-P \
-		{outputs['split']} \
-		{outputs['split']} \
-	| gzip \
-		-c \
-		- \
+	minimap2 \\
+		-x asm5 \\
+		-t {options['cores']} \\
+		-D \\
+		-P \\
+		{outputs['split']} \\
+		{outputs['split']} \\
+	| gzip \\
+		-c \\
+		- \\
 		> {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.self.prog.paf.gz
 	
 	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.self.prog.paf.gz {outputs['paf']}
@@ -905,36 +905,36 @@ def purge_dups_3_purge_duplicates(pb_stat_file: str, pb_base_cov_file: str, self
 	
 	[ -d {output_directory}/purge_dups{directory_addition}/{round_number:02} ] || mkdir -p {output_directory}/purge_dups{directory_addition}/{round_number:02}
 	
-	calcuts \
-		{pb_stat_file} \
+	calcuts \\
+		{pb_stat_file} \\
 		> {output_directory}/purge_dups{directory_addition}/{round_number:02}/cutoffs.prog
 	
 	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/cutoffs.prog {outputs['cutoffs']}
 
-	purge_dups \
-		-2 \
-		-T {outputs['cutoffs']} \
-		-c {pb_base_cov_file} \
-		{self_alignment_paf} \
+	purge_dups \\
+		-2 \\
+		-T {outputs['cutoffs']} \\
+		-c {pb_base_cov_file} \\
+		{self_alignment_paf} \\
 		> {output_directory}/purge_dups{directory_addition}/{round_number:02}/dups.prog.bed
 
 	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/dups.prog.bed {outputs['dups']}
 
-	get_seqs \
-		-p {output_directory}/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog \
-		{outputs['dups']} \
+	get_seqs \\
+		-p {output_directory}/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog \\
+		{outputs['dups']} \\
 		{genome_assembly_file}
 
-	seqkit seq \
-		-j {options['cores']} \
-		-w 60 \
-		-o {outputs['purged']} \
+	seqkit seq \\
+		-j {options['cores']} \\
+		-w 60 \\
+		-o {outputs['purged']} \\
 		{output_directory}/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog.purged.fa
 
 	rm {output_directory}/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog.purged.fa
 	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog.hap.fa {outputs['hap']}
 	
-	awk \
+	awk \\
 		'BEGIN{{OFS="\\t"}}
 		{{if ($0 ~ /^>/)
 			{{if (sequence_length)
@@ -950,8 +950,8 @@ def purge_dups_3_purge_duplicates(pb_stat_file: str, pb_base_cov_file: str, self
 		END{{if (sequence_length)
 			{{print sequence_name, sequence_length}}
 		print sequence_number"_sequences", total_length + sequence_length
-		}}' \
-		{outputs['purged']} \
+		}}' \\
+		{outputs['purged']} \\
 		> {output_directory}/purge_dups{directory_addition}/{round_number:02}/sequences.tsv
 
 	last_line=($(tail -n 1 {output_directory}/purge_dups{directory_addition}/{round_number:02}/sequences.tsv))

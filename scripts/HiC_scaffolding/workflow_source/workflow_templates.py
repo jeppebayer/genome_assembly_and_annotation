@@ -55,12 +55,12 @@ def index_reference(reference_genome_file: str, output_directory: str):
 	[ -d {output_directory}/HiC_scaffolding/YaHS/reference ] || mkdir -p {output_directory}/HiC_scaffolding/YaHS/reference
 	ln -s {reference_genome_file} {output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}
 
-	bwa index \
-		-p {output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)} \
+	bwa index \\
+		-p {output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)} \\
 		{output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}
 	
-	samtools faidx \
-		-o {output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}.prog.fai \
+	samtools faidx \\
+		-o {output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}.prog.fai \\
 		{output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}
 	
 	mv {output_directory}/HiC_scaffolding/YaHS/reference/{os.path.basename(reference_genome_file)}.prog.fai {outputs['fai']}
@@ -102,21 +102,21 @@ def hic_alignment_to_draft_assembly(hic_seqeuence_files: list, draft_genome_file
 	
 	[ -d {output_directory}/HiC_scaffolding/YaHS/alignment/tmp ] || mkdir -p {output_directory}/HiC_scaffolding/YaHS/alignment/tmp
 	
-	bwa mem \
-        -t {options['cores']} \
-        -R '@RG\\tID:{species_abbreviation(species_name)}.HiC\\tSM:HiC_to_draft' \
-        -S \
-        -P \
-        -5 \
-        -T 0 \
-        {draft_genome_file} \
-        {hic_seqeuence_files[0]} \
-        {hic_seqeuence_files[1]} \
-    | samtools sort \
-        -@ {int(options['cores']) - 1} \
-		-n \
-        -O BAM \
-        -T {output_directory}/HiC_scaffolding/YaHS/alignment/tmp \
+	bwa mem \\
+        -t {options['cores']} \\
+        -R '@RG\\tID:{species_abbreviation(species_name)}.HiC\\tSM:HiC_to_draft' \\
+        -S \\
+        -P \\
+        -5 \\
+        -T 0 \\
+        {draft_genome_file} \\
+        {hic_seqeuence_files[0]} \\
+        {hic_seqeuence_files[1]} \\
+    | samtools sort \\
+        -@ {int(options['cores']) - 1} \\
+		-n \\
+        -O BAM \\
+        -T {output_directory}/HiC_scaffolding/YaHS/alignment/tmp \\
         -o {output_directory}/HiC_scaffolding/YaHS/alignment/{species_abbreviation(species_name)}.HiC_to_draft.prog.bam
 	
 	mv {output_directory}/HiC_scaffolding/YaHS/alignment/{species_abbreviation(species_name)}.HiC_to_draft.prog.bam {outputs['bam']}
@@ -160,10 +160,10 @@ def mark_duplicates_picard(alignment_bam_file: str, output_directory: str):
 	
 	export _JAVA_OPTIONS="-Xmx{options['memory']}"
 
-	picard MarkDuplicates \
-		--INPUT {alignment_bam_file} \
-		--OUTPUT {os.path.splitext(alignment_bam_file)[0]}.markdup.prog.bam \
-		--METRICS_FILE {os.path.splitext(alignment_bam_file)[0]}.markdup.prog.txt \
+	picard MarkDuplicates \\
+		--INPUT {alignment_bam_file} \\
+		--OUTPUT {os.path.splitext(alignment_bam_file)[0]}.markdup.prog.bam \\
+		--METRICS_FILE {os.path.splitext(alignment_bam_file)[0]}.markdup.prog.txt \\
 		--TMP_DIR {output_directory}/HiC_scaffolding/YaHS/alignment/tmp
 	
 	mv {os.path.splitext(alignment_bam_file)[0]}.markdup.prog.bam {outputs['markdup']}
@@ -208,10 +208,10 @@ def hic_scaffolding_yahs(draft_genome_file: str, hic_to_draft_bam_file: str, out
 	
 	[ -d {output_directory}/HiC_scaffolding/YaHS ] || mkdir -p {output_directory}/HiC_scaffolding/YaHS
 	
-	yahs \
-        -r 500000,1000000,2000000,5000000,10000000,20000000,50000000,100000000,200000000,500000000 \
-        -o {output_directory}/HiC_scaffolding/YaHS/{species_abbreviation(species_name)} \
-        {draft_genome_file} \
+	yahs \\
+        -r 500000,1000000,2000000,5000000,10000000,20000000,50000000,100000000,200000000,500000000 \\
+        -o {output_directory}/HiC_scaffolding/YaHS/{species_abbreviation(species_name)} \\
+        {draft_genome_file} \\
         {hic_to_draft_bam_file}
 	
 	echo "END: $(date)"
@@ -257,12 +257,12 @@ def yahs_conversion_manual_curation(hic_bin_file: str, scaffolds_final_agp_file:
     [ -d {output_directory}/HiC_scaffolding/YaHS/tmp ] || mkdir -p {output_directory}/HiC_scaffolding/YaHS/tmp
     [ -d {output_directory}/HiC_scaffolding/YaHS ] || mkdir -p {output_directory}/HiC_scaffolding/YaHS
 
-    juicer pre \
-        -a \
-        -o {output_directory}/HiC_sacffolding/YaHS/{species_abbreviation(species_name)}.JBAT.prog \
-        {hic_bin_file} \
-        {scaffolds_final_agp_file} \
-        {draft_assembly_fai_index_file} \
+    juicer pre \\
+        -a \\
+        -o {output_directory}/HiC_sacffolding/YaHS/{species_abbreviation(species_name)}.JBAT.prog \\
+        {hic_bin_file} \\
+        {scaffolds_final_agp_file} \\
+        {draft_assembly_fai_index_file} \\
         > {output_directory}/HiC_scaffolding/YaHS/{species_abbreviation(species_name)}.JBAT.prog.log 2>&1
     
     mv {output_directory}/HiC_scaffolding/YaHS/{species_abbreviation(species_name)}.JBAT.prog.txt {outputs['jbat'][0]}
@@ -305,8 +305,8 @@ def chrom_sizes(scaffolds_final_fa_file: str, chrom_size_script: str = f'{os.pat
     echo "START: $(date)"
     echo "JobID: $SLURM_JOBID"
     
-    python {chrom_size_script} \
-        {scaffolds_final_fa_file} \
+    python {chrom_size_script} \\
+        {scaffolds_final_fa_file} \\
         {scaffolds_final_fa_file}.prog.chrom_sizes
     
     mv {scaffolds_final_fa_file}.prog.chrom_sizes {outputs['sizes']}
@@ -348,11 +348,11 @@ def contact_matrix_manual_curation(JBAT_text_file: str, JBAT_log_file: str, outp
     
     [ -d {output_directory}/HiC_scaffolding/YaHS/tmp ] || mkdir -p {output_directory}/HiC_scaffolding/YaHS/tmp
 
-    java -jar -Xmx{options['memory']} {juicer_tools} pre \
-        -t {output_directory}/HiC_scaffolding/YaHS/tmp \
-        -j {options['cores']} \
-        {JBAT_text_file} \
-        {output_directory}/HiC_scaffolding/YaHS/{species_abbreviation(species_name)}.JBAT.prog.hic \
+    java -jar -Xmx{options['memory']} {juicer_tools} pre \\
+        -t {output_directory}/HiC_scaffolding/YaHS/tmp \\
+        -j {options['cores']} \\
+        {JBAT_text_file} \\
+        {output_directory}/HiC_scaffolding/YaHS/{species_abbreviation(species_name)}.JBAT.prog.hic \\
         <(cat {JBAT_log_file} | grep PRE_C_SIZE | awk '{{print $2" "$3}}')
 
     mv {output_directory}/HiC_scaffolding/YaHS/{species_abbreviation(species_name)}.JBAT.prog.hic {outputs['hic']}
@@ -433,38 +433,38 @@ def setup_for_juicer(hic_read1_files: list, hic_read2_files: list, draft_genome_
 		[ -e "${{fastq2[$i]}}" ] || ln -s "${{read2[$i]}}" "${{fastq2[$i]}}"
 	done
 	
-	bwa index \
-		-p {output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)} \
+	bwa index \\
+		-p {output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)} \\
 		{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}
 	
-	samtools faidx \
-		-o {output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.prog.fai \
+	samtools faidx \\
+		-o {output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.prog.fai \\
 		{output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}
 	
 	mv {output_directory}/juicer/references/{os.path.basename(draft_genome_assembly_file)}.prog.fai {outputs['fai']}
 
-	split \
-		-a 3 \
-		-l 8000000 \
-		-d \
-		--additional-suffix=_R1.fastq \
-		--filter='gzip > $FILE.gz' \
-		<(zcat {" ".join(hic_read1_files)}) \
+	split \\
+		-a 3 \\
+		-l 8000000 \\
+		-d \\
+		--additional-suffix=_R1.fastq \\
+		--filter='gzip > $FILE.gz' \\
+		<(zcat {" ".join(hic_read1_files)}) \\
 		{output_directory}/juicer/splits/
 	
-	split \
-		-a 3 \
-		-l 8000000 \
-		-d \
-		--additional-suffix=_R2.fastq \
-		--filter='gzip > $FILE.gz' \
-		<(zcat {" ".join(hic_read2_files)}) \
+	split \\
+		-a 3 \\
+		-l 8000000 \\
+		-d \\
+		--additional-suffix=_R2.fastq \\
+		--filter='gzip > $FILE.gz' \\
+		<(zcat {" ".join(hic_read2_files)}) \\
 		{output_directory}/juicer/splits/
 	
-	awk \
+	awk \\
 		'BEGIN{{OFS = "\\t"}}
-		{{print $1, $2}}' \
-		{outputs['fai']} \
+		{{print $1, $2}}' \\
+		{outputs['fai']} \\
 		> {output_directory}/juicer/chrom.prog.sizes
 
 	mv {output_directory}/juicer/chrom.prog.sizes {outputs['sizes']}
@@ -503,18 +503,18 @@ def juicer_pipeline(draft_genome_assembly_file: str, chrom_sizes_file: str, outp
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	bash {juicer} \
-		-d {output_directory}/juicer \
-		-D {os.path.dirname(os.path.dirname(juicer))} \
-		-p {chrom_sizes_file} \
-		-A EcoGenetics \
-		-s none \
-		-z {draft_genome_assembly_file} \
-		-q short \
-		-Q 12:00:00 \
-		-l normal \
-		-L 24:00:00 \
-		-t 40 \
+	bash {juicer} \\
+		-d {output_directory}/juicer \\
+		-D {os.path.dirname(os.path.dirname(juicer))} \\
+		-p {chrom_sizes_file} \\
+		-A EcoGenetics \\
+		-s none \\
+		-z {draft_genome_assembly_file} \\
+		-q short \\
+		-Q 12:00:00 \\
+		-l normal \\
+		-L 24:00:00 \\
+		-t 40 \\
 		> {species_abbreviation(species_name)}_juicer.log
 	
 	echo "END: $(date)"
@@ -561,10 +561,10 @@ def assembly_3ddna(draft_assembly_file: str, merged_nodups_file: str, output_dir
 
 	export _JAVA_OPTIONS="-Djava.io.tmpdir={output_directory}/juicer/3ddna_in{input_size}_r{edit_rounds}/tmp -Xmx{options['memory']}"
 
-	3d-dna \
-		--rounds {edit_rounds} \
-		--input {input_size} \
-		{draft_assembly_file} \
+	3d-dna \\
+		--rounds {edit_rounds} \\
+		--input {input_size} \\
+		{draft_assembly_file} \\
 		{merged_nodups_file}
 	
 	echo "END: $(date)"
@@ -609,17 +609,17 @@ def finalize_3ddna(reviewed_assembly_file: str, draft_assembly_file: str, merged
 
 	cd {os.path.dirname(final_hic_file)}/finalize
 
-	bash {post_review} \
-		--sort-output \
-		-s finalize \
-		-r {reviewed_assembly_file} \
-		{draft_assembly_file} \
+	bash {post_review} \\
+		--sort-output \\
+		-s finalize \\
+		-r {reviewed_assembly_file} \\
+		{draft_assembly_file} \\
 		{merged_nodups_file}
 
-	seqkit range \
-		-j {options['cores']} \
-		-r 1:{number_of_chromosomes} \
-		-o {os.path.dirname(final_hic_file)}/finalize/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.nodebris.prog.fasta \
+	seqkit range \\
+		-j {options['cores']} \\
+		-r 1:{number_of_chromosomes} \\
+		-o {os.path.dirname(final_hic_file)}/finalize/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.nodebris.prog.fasta \\
 		{os.path.dirname(final_hic_file)}/finalize/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}_HiC.fasta
 	
 	mv {os.path.dirname(final_hic_file)}/finalize/{os.path.splitext(os.path.basename(draft_assembly_file))[0]}.nodebris.prog.fasta {outputs['final_fasta']}
@@ -661,16 +661,16 @@ def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_p
 	
 	cd {os.path.dirname(genome_assembly_file)}
 
-	busco \
-		--cpu {options['cores']} \
-		--force \
-		--in {genome_assembly_file} \
-		--mode genome \
-		--out busco_{os.path.basename(genome_assembly_file)} \
-		--out_path {os.path.dirname(genome_assembly_file)} \
-		--download_path {busco_download_path} \
-		--lineage {busco_download_path}/lineages/{busco_dataset} \
-		--tar \
+	busco \\
+		--cpu {options['cores']} \\
+		--force \\
+		--in {genome_assembly_file} \\
+		--mode genome \\
+		--out busco_{os.path.basename(genome_assembly_file)} \\
+		--out_path {os.path.dirname(genome_assembly_file)} \\
+		--download_path {busco_download_path} \\
+		--lineage {busco_download_path}/lineages/{busco_dataset} \\
+		--tar \\
 		--offline
 
 	echo "END: $(date)"
@@ -707,9 +707,9 @@ def bundle_sequences(assembly_fasta_file: str, n_chromosomes_to_keep: int, n_ins
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	awk \
-		-v chromosomes_to_keep={n_chromosomes_to_keep} \
-		-v spacing={n_insertion_size} \
+	awk \\
+		-v chromosomes_to_keep={n_chromosomes_to_keep} \\
+		-v spacing={n_insertion_size} \\
 		'BEGIN{{
 			RS = ">"
 			ORS = ""
@@ -764,9 +764,9 @@ def bundle_sequences(assembly_fasta_file: str, n_chromosomes_to_keep: int, n_ins
 		}}
 		END{{
 			print "\\n"
-		}}' \
-		{assembly_fasta_file} \
-	| fold \
+		}}' \\
+		{assembly_fasta_file} \\
+	| fold \\
 		> {os.path.splitext(assembly_fasta_file)[0]}.bundled.prog{os.path.splitext(assembly_fasta_file)[1]}
 	
 	mv {os.path.splitext(assembly_fasta_file)[0]}.bundled.prog{os.path.splitext(assembly_fasta_file)[1]} {outputs['bundled']}

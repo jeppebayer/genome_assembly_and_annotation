@@ -60,9 +60,9 @@ def build_repeatmodeller_database(genome_assembly_file: str, output_directory: s
 	
 	cd {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}
 	
-	BuildDatabase \
-		-name {species_name.replace(' ', '_')}.prog \
-		-engine rmblast \
+	BuildDatabase \\
+		-name {species_name.replace(' ', '_')}.prog \\
+		-engine rmblast \\
 		{genome_assembly_file}
 
 	mv {output_directory}/RepeatModeler/RM_DB_{species_name.replace(" ", "_")}/{species_name.replace(" ", "_")}.prog.nhr {outputs['db_files'][0]}
@@ -124,48 +124,48 @@ def repeatmodeler(database: list, output_directory: str, species_name: str):
 
 	cd {output_directory}/RepeatModeler
 
-	RepeatModeler \
-		-database ./RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')} \
-		-LTRStruct \
+	RepeatModeler \\
+		-database ./RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')} \\
+		-LTRStruct \\
 		-pa {int(options['cores']/4)}
 	
-	seqkit \
-		fx2tab \
-		RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')}-families.fa \
-	| awk \
-		-v species_abbreviation={species_abbreviation(species_name)} \
+	seqkit \\
+		fx2tab \\
+		RM_DB_{species_name.replace(' ', '_')}/{species_name.replace(' ', '_')}-families.fa \\
+	| awk \\
+		-v species_abbreviation={species_abbreviation(species_name)} \\
 		'{{
 			print species_abbreviation "_" $0
-		}}' \
-	| seqkit \
-		tab2fx \
+		}}' \\
+	| seqkit \\
+		tab2fx \\
 		> {species_name.replace(' ', '_')}-families.prefix.prog.fa
 
-	seqkit \
-		fx2tab \
-		{species_name.replace(' ', '_')}-families.prefix.prog.fa \
-	| awk \
+	seqkit \\
+		fx2tab \\
+		{species_name.replace(' ', '_')}-families.prefix.prog.fa \\
+	| awk \\
 		'{{
 			if ($0 ~ /Unknown/)
 			{{
 				print $0
 			}}
-		}}' \
-	| seqkit \
+		}}' \\
+	| seqkit \\
 		tab2fx
 		> {species_name.replace(' ', '_')}-families.prefix.unknown.prog.fa
 
-	seqkit \
-		fx2tab \
-		{species_name.replace(' ', '_')}-families.prefix.prog.fa \
-	| awk \
+	seqkit \\
+		fx2tab \\
+		{species_name.replace(' ', '_')}-families.prefix.prog.fa \\
+	| awk \\
 		'{{
 			if ($0 !~ /Unknown/)
 			{{
 				print $0
 			}}
-		}}' \
-	| seqkit \
+		}}' \\
+	| seqkit \\
 		tab2fx
 		> {species_name.replace(' ', '_')}-families.prefix.known.prog.fa
 
@@ -222,16 +222,16 @@ def repeatmasker(genome_assembly_file: str, library_file: str, output_directory:
 	
 	[ -d {output_directory}/RepeatMasker/{run_name} ] || mkdir -p {output_directory}/RepeatMasker/{run_name}
 
-	RepeatMasker \
-		-e rmblast \
-		-pa {int(options['cores']/4)} \
-		-dir {output_directory}/RepeatMasker/{run_name} \
-		-xsmall \
-		-lib {library_file} \
+	RepeatMasker \\
+		-e rmblast \\
+		-pa {int(options['cores']/4)} \\
+		-dir {output_directory}/RepeatMasker/{run_name} \\
+		-xsmall \\
+		-lib {library_file} \\
 		{genome_assembly_file}
 	
-	awk \
-		-F " " \
+	awk \\
+		-F " " \\
 		'BEGIN{{OFS = "\\t"; print "##gff-version 3";}}
 		{{
 			if (NR > 3)
@@ -254,8 +254,8 @@ def repeatmasker(genome_assembly_file: str, library_file: str, output_directory:
 				}}
 			print $5, "RepeatMasker", "repeat_region", $6, $7, ".", strand, ".", "ID="$15";Name="$10";Class="$11";Family="$11";Target="$10" "start" "$13;
 			}}
-		}}' \
-		{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.out \
+		}}' \\
+		{output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.out \\
 		> {output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.repeats.{run_name}.prog.gff
 
 	mv {output_directory}/RepeatMasker/{run_name}/{os.path.basename(genome_assembly_file)}.repeats.{run_name}.prog.gff {outputs['gff']}
@@ -318,25 +318,25 @@ def combine_repeatmasker_runs(repeatmasker_run1: list, repeatmasker_run2: list, 
 
 	cd {output_directory}/RepeatMasker
 	
-	cat \
-		{inputs['run1'][0]} \
-		{inputs['run2'][0]} \
+	cat \\
+		{inputs['run1'][0]} \\
+		{inputs['run2'][0]} \\
 		> {output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.prog.cat.gz
 
-	cat \
-		{inputs['run1'][2]} \
-		<(tail -n +4 {inputs['run2'][2]}) \
+	cat \\
+		{inputs['run1'][2]} \\
+		<(tail -n +4 {inputs['run2'][2]}) \\
 		> {output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.prog.out
 	
 	mv {output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.prog.cat.gz {outputs['cat']}
 	mv {output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.prog.out {outputs['out']}
 		
-	ProcessRepeats \
-		-lib {library_file} \
+	ProcessRepeats \\
+		-lib {library_file} \\
 		{species_abbreviation(species_name)}.fasta.fullmask.cat.gz
 	
-	awk \
-		-F " " \
+	awk \\
+		-F " " \\
 		'BEGIN{{
 			OFS = "\\t"
 			print "##gff-version 3"
@@ -362,8 +362,8 @@ def combine_repeatmasker_runs(repeatmasker_run1: list, repeatmasker_run2: list, 
 				}}
 			print $5, "RepeatMasker", "repeat_region", $6, $7, ".", strand, ".", "ID="$15";Name="$10";Class="$11";Family="$11";Target="$10" "start" "$13;
 			}}
-		}}' \
-		{output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.out \
+		}}' \\
+		{output_directory}/RepeatMasker/{species_abbreviation(species_name)}.fasta.fullmask.out \\
 		> {output_directory}/RepeatMasker/{species_abbreviation(species_name)}.repeats.prog.gff
 
 	mv {output_directory}/RepeatMasker/{species_abbreviation(species_name)}.repeats.prog.gff {outputs['gff']}
@@ -414,21 +414,21 @@ def mask_assembly(genome_assembly_file: str, annotation_file: str, output_direct
 	
 	[ -d {output_directory} ] || mkdir -p {output_directory}
 
-	bedtools maskfasta \
-		-soft \
-		-fi {genome_assembly_file} \
-		-bed {annotation_file} \
+	bedtools maskfasta \\
+		-soft \\
+		-fi {genome_assembly_file} \\
+		-bed {annotation_file} \\
 		-fo {output_directory}/{species_abbreviation(species_name)}.softmasked.prog.fna
 
-	awk \
+	awk \\
 		'{{
 			gsub(/\\s$/, "")
 			print $0
-		}}' \
-		{output_directory}/{species_abbreviation(species_name)}.softmasked.prog.fna \
+		}}' \\
+		{output_directory}/{species_abbreviation(species_name)}.softmasked.prog.fna \\
 		> {output_directory}/{species_abbreviation(species_name)}.softmasked.nowhitespace.prog.fna
 
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -437,8 +437,8 @@ def mask_assembly(genome_assembly_file: str, annotation_file: str, output_direct
 			{{
 				print $1, ($4 - 1), $5
 			}}
-		}}' \
-		{annotation_file} \
+		}}' \\
+		{annotation_file} \\
 		> {output_directory}/{species_abbreviation(species_name)}.repeats.prog.bed
 	
 	mv {output_directory}/{species_abbreviation(species_name)}.softmasked.nowhitespace.prog.fna {outputs['masked']}

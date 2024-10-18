@@ -58,7 +58,7 @@ def star_index(genome_assembly_file: str, output_directory: str):
 	[ "$(ls -A {output_directory}/indices)" ] || rm -rf {output_directory}/indices/*
 	cd {output_directory}
 	
-	salength=$(awk \
+	salength=$(awk \\
 		'BEGIN{{
 			genome_length = 0
 		}}
@@ -77,15 +77,15 @@ def star_index(genome_assembly_file: str, output_directory: str):
 			{{
 				print 14
 			}}
-		}}' \
+		}}' \\
 		{genome_assembly_file})
 
-	STAR \
-		--runThreadN {options['cores']} \
-		--runMode genomeGenerate \
-		--genomeDir {output_directory}/indices \
-		--genomeFastaFiles {genome_assembly_file} \
-		--outTmpDir {output_directory}/tmp \
+	STAR \\
+		--runThreadN {options['cores']} \\
+		--runMode genomeGenerate \\
+		--genomeDir {output_directory}/indices \\
+		--genomeFastaFiles {genome_assembly_file} \\
+		--outTmpDir {output_directory}/tmp \\
 		--genomeSAindexNbases "$salength"
 	
 	mv {output_directory}/Log.out {output_directory}/indices/Log.out
@@ -139,19 +139,19 @@ def star_alignment(rna_sequence_files: list, star_index_directory: str, output_d
 	[ -d {output_directory}/rna_alignment ] || mkdir -p {output_directory}/rna_alignment
 	[ -d {output_directory}/tmp ] && rm -rf {output_directory}/tmp
 	
-	STAR \
-		--runThreadN {options['cores']} \
-		--runMode alignReads \
-		--genomeDir {star_index_directory} \
-		--readFilesIn {" ".join(rna_sequence_files)} \
-		--readFilesCommand {'zcat' if rna_sequence_files[0].endswith('.gz') else '-'} \
-		--outFileNamePrefix {output_directory}/rna_alignment/{species_abbreviation(species_name)}_ \
-		--outSAMtype BAM SortedByCoordinate \
-		--outSAMstrandField intronMotif \
-		--outSAMattrRGline ID:{species_abbreviation(species_name)}_RNA SM:{species_abbreviation(species_name)}_RNA \
-		--outTmpDir {output_directory}/tmp \
-		--outFilterScoreMinOverLread 0 \
-		--outFilterMatchNminOverLread 0 \
+	STAR \\
+		--runThreadN {options['cores']} \\
+		--runMode alignReads \\
+		--genomeDir {star_index_directory} \\
+		--readFilesIn {" ".join(rna_sequence_files)} \\
+		--readFilesCommand {'zcat' if rna_sequence_files[0].endswith('.gz') else '-'} \\
+		--outFileNamePrefix {output_directory}/rna_alignment/{species_abbreviation(species_name)}_ \\
+		--outSAMtype BAM SortedByCoordinate \\
+		--outSAMstrandField intronMotif \\
+		--outSAMattrRGline ID:{species_abbreviation(species_name)}_RNA SM:{species_abbreviation(species_name)}_RNA \\
+		--outTmpDir {output_directory}/tmp \\
+		--outFilterScoreMinOverLread 0 \\
+		--outFilterMatchNminOverLread 0 \\
 		--outFilterMatchNmin 0
 	
 	echo "END: $(date)"
@@ -195,19 +195,19 @@ def make_protein_db(reference_genome_file: str, gtf_annotation_file: str, output
 
 	ln -s {reference_genome_file} {os.path.basename(reference_genome_file)}
 
-	agat_sp_extract_sequences.pl \
-		--gff {gtf_annotation_file} \
-		--fasta {os.path.basename(reference_genome_file)} \
-		--type cds \
-		--protein \
+	agat_sp_extract_sequences.pl \\
+		--gff {gtf_annotation_file} \\
+		--fasta {os.path.basename(reference_genome_file)} \\
+		--type cds \\
+		--protein \\
 		--output {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta
 	
-	awk \
+	awk \\
 		'{{
 			gsub(/\\s$/, "");
 			print $0
-		}}' \
-		{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta \
+		}}' \\
+		{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta \\
 		> {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.prog.fasta
 	
 	rm {os.path.basename(reference_genome_file)}
@@ -221,12 +221,12 @@ def make_protein_db(reference_genome_file: str, gtf_annotation_file: str, output
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-# awk \
+# awk \\
 # 		'{{if ($0 ~ /^>/)
 # 			{{gsub(/ /, ";")}}
 # 		gsub(/\s$/, "");
-# 		print $0}}' \
-# 		{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta \
+# 		print $0}}' \\
+# 		{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta \\
 # 		> {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.prog.fasta
 
 def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin/', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
@@ -274,16 +274,16 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 		mkdir -p {output_directory}/braker1
 	fi
 	
-	braker.pl \
-		--genome {genome_assembly_file} \
-		--bam {rna_alignment_bam} \
-		--species {species_name.replace(' ', '_')}_{date.today().day}-{date.today().month}-{date.today().year} \
-		--threads {options['cores']} \
-		--workingdir {output_directory}/braker1 \
-		--GENEMARK_PATH {genemark} \
+	braker.pl \\
+		--genome {genome_assembly_file} \\
+		--bam {rna_alignment_bam} \\
+		--species {species_name.replace(' ', '_')}_{date.today().day}-{date.today().month}-{date.today().year} \\
+		--threads {options['cores']} \\
+		--workingdir {output_directory}/braker1 \\
+		--GENEMARK_PATH {genemark} \\
 		--PROTHINT_PATH {prothint}
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}} 
@@ -292,13 +292,13 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 			{{
 				print $1, $4-1, $5
 			}}
-		}}' \
-		{outputs['gtf']} \
+		}}' \\
+		{outputs['gtf']} \\
 		> {output_directory}/braker1/genes.prog.bed
 	
-	bedtools complement \
-		-i {output_directory}/braker1/genes.prog.bed \
-		-g <(awk \
+	bedtools complement \\
+		-i {output_directory}/braker1/genes.prog.bed \\
+		-g <(awk \\
 				'BEGIN{{
 					RS = ">"
 					ORS = "\\n"
@@ -314,8 +314,8 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 					chromname = namearray[1]
 					$1 = ""
 					print chromname, length($0) - NF + 1
-				}}' \
-				{genome_assembly_file}) \
+				}}' \\
+				{genome_assembly_file}) \\
 		> {output_directory}/braker1/intergenic.prog.bed
 	
 	mv {output_directory}/braker1/genes.prog.bed {outputs['genebed']}
@@ -371,16 +371,25 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 		mkdir -p {output_directory}/braker2
 	fi
 
-	braker.pl \
-		--genome {genome_assembly_file} \
-		--prot_seq {'<(zcat ' + protein_database_file + ')' if protein_database_file.endswith('.gz') else protein_database_file} \
-		--species {species_name.replace(' ', '_')}_{date.today().day}-{date.today().month}-{date.today().year} \
-		--threads {options['cores']} \
-		--workingdir {output_directory}/braker2 \
-		--GENEMARK_PATH {genemark} \
+	proteindb={protein_database_file}
+
+	if [ "${{proteindb##*.}}" == "gz" ]; then
+		gunzip \\
+			--stdout \\
+			{protein_database_file} \\
+			> {output_directory}/braker2/{os.path.basename(os.path.splitext(protein_database_file)[0])}
+	fi
+
+	braker.pl \\
+		--genome {genome_assembly_file} \\
+		--prot_seq {''.join([output_directory, '/braker2/', os.path.basename(os.path.splitext(protein_database_file)[0])]) if protein_database_file.endswith('.gz') else protein_database_file} \\
+		--species {species_name.replace(' ', '_')}_{date.today().day}-{date.today().month}-{date.today().year} \\
+		--threads {options['cores']} \\
+		--workingdir {output_directory}/braker2 \\
+		--GENEMARK_PATH {genemark} \\
 		--PROTHINT_PATH {prothint}
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}} 
@@ -389,13 +398,13 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 			{{
 				print $1, $4-1, $5
 			}}
-		}}' \
-		{outputs['gtf']} \
+		}}' \\
+		{outputs['gtf']} \\
 		> {output_directory}/braker2/genes.prog.bed
 	
-	bedtools complement \
-		-i {output_directory}/braker2/genes.prog.bed \
-		-g <(awk \
+	bedtools complement \\
+		-i {output_directory}/braker2/genes.prog.bed \\
+		-g <(awk \\
 				'BEGIN{{
 					RS = ">"
 					ORS = "\\n"
@@ -411,8 +420,8 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 					chromname = namearray[1]
 					$1 = ""
 					print chromname, length($0) - NF + 1
-				}}' \
-				{genome_assembly_file}) \
+				}}' \\
+				{genome_assembly_file}) \\
 		> {output_directory}/braker2/intergenic.prog.bed
 	
 	mv {output_directory}/braker2/genes.prog.bed {outputs['genebed']}
@@ -464,22 +473,31 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 
 	if [ -d {output_directory}/braker3 ]; then
 		rm -rf {output_directory}/braker3
-		mkdir -p {output_directory}/braker3
+		mkdir -p {output_directory}/braker3/tmp
 	else
-		mkdir -p {output_directory}/braker3
+		mkdir -p {output_directory}/braker3/tmp
+	fi
+
+	proteindb={protein_database_file}
+
+	if [ "${{proteindb##*.}}" == "gz" ]; then
+		gunzip \\
+			--stdout \\
+			{protein_database_file} \\
+			> {output_directory}/braker3/tmp/{os.path.basename(os.path.splitext(protein_database_file)[0])}
 	fi
 	
-	braker.pl \
-		--genome {genome_assembly_file} \
-		--bam {rna_alignment_bam} \
-		--prot_seq {'<(zcat ' + protein_database_file + ')' if protein_database_file.endswith('.gz') else protein_database_file} \
-		--species {species_name.replace(' ', '_')}_{date.today().day}-{date.today().month}-{date.today().year} \
-		--threads {options['cores']} \
-		--workingdir {output_directory}/braker3 \
-		--GENEMARK_PATH {genemark} \
+	braker.pl \\
+		--genome {genome_assembly_file} \\
+		--bam {rna_alignment_bam} \\
+		--prot_seq {''.join([output_directory, '/braker3/tmp/', os.path.basename(os.path.splitext(protein_database_file)[0])]) if protein_database_file.endswith('.gz') else protein_database_file} \\
+		--species {species_name.replace(' ', '_')}_{date.today().day}-{date.today().month}-{date.today().year} \\
+		--threads {options['cores']} \\
+		--workingdir {output_directory}/braker3 \\
+		--GENEMARK_PATH {genemark} \\
 		--PROTHINT_PATH {prothint}
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}} 
@@ -488,13 +506,13 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 			{{
 				print $1, $4-1, $5
 			}}
-		}}' \
-		{outputs['gtf']} \
+		}}' \\
+		{outputs['gtf']} \\
 		> {output_directory}/braker3/genes.prog.bed
 	
-	bedtools complement \
-		-i {output_directory}/braker3/genes.prog.bed \
-		-g <(awk \
+	bedtools complement \\
+		-i {output_directory}/braker3/genes.prog.bed \\
+		-g <(awk \\
 				'BEGIN{{
 					RS = ">"
 					ORS = "\\n"
@@ -510,10 +528,11 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 					chromname = namearray[1]
 					$1 = ""
 					print chromname, length($0) - NF + 1
-				}}' \
-				{genome_assembly_file}) \
+				}}' \\
+				{genome_assembly_file}) \\
 		> {output_directory}/braker3/intergenic.prog.bed
 
+	rm -rf {output_directory}/braker3/tmp
 	mv {output_directory}/braker3/genes.prog.bed {outputs['genebed']}
 	mv {output_directory}/braker3/intergenic.prog.bed {outputs['intergenicbed']}
 
@@ -556,22 +575,22 @@ def busco_protein(genome_assembly_file: str, genome_annotation_gtf: str, busco_d
 	
 	mkdir -p {output_directory}/busco
 
-	agat_sp_extract_sequences.pl \
-		--fasta {genome_assembly_file} \
-		--gff {genome_annotation_gtf} \
-		--type gene \
-		--protein \
-		--output {output_directory}/busco/{os.path.basename(genome_assembly_file)}.protein.fa \
+	agat_sp_extract_sequences.pl \\
+		--fasta {genome_assembly_file} \\
+		--gff {genome_annotation_gtf} \\
+		--type gene \\
+		--protein \\
+		--output {output_directory}/busco/{os.path.basename(genome_assembly_file)}.protein.fa
 
-	busco \
-		--cpu {options['cores']} \
-		--force \
-		--in {output_directory}/busco/{os.path.basename(genome_assembly_file)}.protein.fa \
-		--mode proteins \
-		--out busco_{os.path.basename(genome_assembly_file)}.protein.fa \
-		--out_path {output_directory}/busco \
-		--download_path {busco_download_path} \
-		--lineage {busco_download_path}/lineages/{busco_dataset} \
+	busco \\
+		--cpu {options['cores']} \\
+		--force \\
+		--in {output_directory}/busco/{os.path.basename(genome_assembly_file)}.protein.fa \\
+		--mode proteins \\
+		--out busco_{os.path.basename(genome_assembly_file)}.protein.fa \\
+		--out_path {output_directory}/busco \\
+		--download_path {busco_download_path} \\
+		--lineage {busco_download_path}/lineages/{busco_dataset} \\
 		--tar
 	
 	echo "END: $(date)"
