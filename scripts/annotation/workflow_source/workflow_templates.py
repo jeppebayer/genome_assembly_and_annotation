@@ -123,7 +123,8 @@ def star_alignment(rna_sequence_files: list, star_index_directory: str, output_d
 						f'{output_directory}/rna_alignment/{species_abbreviation(species_name)}_Log.progress.out']}
 	options = {
 		'cores': 30,
-		'memory': '40g',
+		'memory': '60g',
+		#'memory': '40g',
 		'walltime': '04:00:00'
 	}
 	spec = f"""
@@ -244,7 +245,7 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 		   	  'rna': rna_alignment_bam}
 	outputs = {'gtf': f'{output_directory}/braker1/braker.gtf',
 			   'genebed': f'{output_directory}/braker1/genes.bed',
-			   'integenicbed': f'{output_directory}/braker1/intergenic.bed',
+			   'intergenicbed': f'{output_directory}/braker1/intergenic.bed',
 			   'coding': f'{output_directory}/braker1/braker.codingseq',
 			   'aa': f'{output_directory}/braker1/braker.aa',
 			   'evidence': f'{output_directory}/braker1/hintsfile.gff',

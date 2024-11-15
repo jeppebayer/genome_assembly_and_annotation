@@ -1,0 +1,17 @@
+name: annotation
+channels:
+  - conda-forge
+  - bioconda
+  - genomedk
+  - gwforg
+  - defaults
+  - hcc
+dependencies:
+  - braker3=3.0.8
+  - gwf
+  - pyyaml
+  - star=2.7.11a
+  - bedtools=2.31.1
+  - gffread=0.12.7
+  - stringtie=2.2.1
+prefix: /home/jepe/miniconda3/envs/annotation
