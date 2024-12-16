@@ -6,9 +6,9 @@ species_name: Lepidocyrtus lignorum
 output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
 # Path to PacBio sequence file.
 pacbio_hifi_sequence_files:
-  - /faststorage/project/EcoGenetics/BACKUP/PacBio_HiFi/Lepidocyrtus_lignorum/LELA_m64101e_221212_121647.hifi_reads.fastq.gz
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Lepidocyrtus_lignorum/L_lig_m84108_241204_183609_s3.hifi_reads.bc2036.fq.gz
 # Use Hi-C data during assembly? (1 = Yes/2 = No/3 = Both).
-use_hic_data: 3
+use_hic_data: 2
 # List of Hi-C sequence files if avalable (optional).
 hic_sequence_files:
   - 
@@ -16,3 +16,4 @@ hic_sequence_files:
 busco_dataset_name: arthropoda_odb10
 # Number of purge_dups rounds.
 purge_dups_rounds: 4
+genome_assembly_file:

@@ -1,0 +1,21 @@
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+species_name: Tenuiphantes tenuis
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/spiders
+# Path to PacBio sequence file.
+pacbio_hifi_sequence_files:
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Tenuiphantes_tenuis/T_ten_m84108_240902_140849_s1.hifi_reads.bc2052.fastq.gz
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Tenuiphantes_tenuis/T_ten_m84108_241204_183609_s3.hifi_reads.bc2052.fq.gz
+# Use Hi-C data during assembly? (1 = Yes/2 = No/3 = Both).
+use_hic_data: 3
+# List of Hi-C sequence files if avalable (optional).
+hic_sequence_files:
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Tenuiphantes_tenuis/Ten_Ten_L1_1.fq.gz
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Tenuiphantes_tenuis/Ten_Ten_L1_2.fq.gz
+# Name of BUSCO lineage dataset to use for analysis.
+busco_dataset_name: arachnida_odb10
+# Number of purge_dups rounds.
+purge_dups_rounds: 4
+genome_assembly_file:
