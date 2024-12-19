@@ -114,7 +114,7 @@ def hifiasm_primary(hifi_sequence_file: str, output_directory: str, species_name
 	options = {
 		'cores': 32,
 		'memory': '300g',
-		'walltime': '48:00:00'
+		'walltime': '72:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -232,7 +232,7 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 	options = {
 		'cores': 32,
 		'memory': '300g',
-		'walltime': '48:00:00'
+		'walltime': '72:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -384,7 +384,7 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
 ########################## Quality Assessment ##########################
-def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_path: str = '/faststorage/project/EcoGenetics/BACKUP/database/busco'):
+def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_path: str = '/faststorage/project/EcoGenetics/databases/BUSCO'):
 	"""
 	Template: Runs BUSCO analysis on genome assembly.
 	
@@ -433,7 +433,7 @@ def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_p
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def busco_protein(protein_sequence_file: str, busco_dataset: str, busco_download_path: str = '/faststorage/project/EcoGenetics/BACKUP/database/busco'):
+def busco_protein(protein_sequence_file: str, busco_dataset: str, busco_download_path: str = '/faststorage/project/EcoGenetics/databases/BUSCO'):
 	"""
 	Template: Runs BUSCO analysis on protein sequences from an annotated gene set.
 	

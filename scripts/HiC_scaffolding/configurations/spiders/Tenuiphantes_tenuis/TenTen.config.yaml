@@ -1,17 +1,17 @@
 # The name of the relevant project account.
 account: EcoGenetics
 # Name of species being analyzed
-species_name: Lepidocyrtus lignorum
+species_name: Tenuiphantes tenuis
 # List of path to Hi-C sequence files.
 hic_sequence_files:
   read1:
-    - 
+    - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Tenuiphantes_tenuis/Ten_Ten_L1_1.fq.gz
   read2:
-    - 
+    - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Tenuiphantes_tenuis/Ten_Ten_L1_2.fq.gz
 # Path to draft genome file.
-draft_genome_file: 
+draft_genome_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/spiders/Tenuiphantes_tenuis/draft_assembly/purge_dups_primary/04/TenTen.purged.fa
 # Directory for final output files.
-output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola
+output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/spiders
 # 3D-DNA settings.
 3ddna:
   input_size: 10000 # (Default 15000)
@@ -19,7 +19,7 @@ output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genom
 # Reviewed .assembly file generated from JuiceBox (can be left blank until a reviewed file has been produced).
 reviewed_assembly_file: 
 # Name of BUSCO lineage dataset to use for analysis.
-busco_dataset_name: arthropoda_odb10
+busco_dataset_name: arachnida_odb10
 # Post editing settings.
 post_editing:
   # The number of chromosomes to leave unaltered after post-editing.
