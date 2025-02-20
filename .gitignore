@@ -3,3 +3,6 @@ logs/
 test_data/
 __pycache__/
 .gwf/
+GeneMark-ETP/
+gmes_linux_64_4/
+ProtHint-2.6.0/

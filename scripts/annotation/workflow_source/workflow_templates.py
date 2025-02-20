@@ -230,7 +230,7 @@ def make_protein_db(reference_genome_file: str, gtf_annotation_file: str, output
 # 		{output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.initial.prog.fasta \\
 # 		> {output_directory}/proteinDB/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.protein.prog.fasta
 
-def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin/', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
+def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory: str, species_name: str, genemark: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/Genemark-ETP/bin', prothint: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/ProtHint-2.6.0/bin'):
 	"""
 	Template: Runs BRAKER3 using RNA-sequence data to predict genes function and annotate genome assembly.
 	
@@ -327,7 +327,7 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def braker2(genome_assembly_file: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin/', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
+def braker2(genome_assembly_file: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/Genemark-ETP/bin', prothint: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/ProtHint-2.6.0/bin'):
 	"""
 	Template: Runs BRAKER3 using a protein database to predict genes function and annotate genome assembly.
 	
@@ -433,7 +433,7 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = '/home/jepe/software/GeneMark-ETP/bin/', prothint: str ='/home/jepe/software/ProtHint-2.6.0/bin'):
+def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_file: str, output_directory: str, species_name: str, genemark: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/Genemark-ETP/bin', prothint: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/ProtHint-2.6.0/bin'):
 	"""
 	Template: Runs BRAKER3 using both RNA-sequence data and a protein database to predict genes function and annotate genome assembly.
 	
