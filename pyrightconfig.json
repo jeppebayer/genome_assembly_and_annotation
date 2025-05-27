@@ -1,0 +1,21 @@
+{
+	"include": [
+		"docs",
+		"results",
+		"scripts"
+	],
+
+	"exclude": [
+		"data",
+		"**/tmp",
+		"test_data",
+		"steps",
+		"**/__pycache__",
+		"**/.gwf",
+		"**/logs"
+	],
+
+	"ignore": [
+		
+	]
+}

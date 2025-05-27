@@ -8,10 +8,10 @@ channels:
   - hcc
 dependencies:
   - ripgrep
-  - seqkit
-  - repeatmasker
-  - bedtools
-  - repeatmodeler
+  - seqkit=2.8.1
+  - repeatmasker=4.1.2.p1
+  - bedtools=2.31.1
+  - repeatmodeler=2.0.3
   - bioawk
   - pyyaml
   - gwf
