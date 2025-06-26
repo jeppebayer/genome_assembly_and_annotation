@@ -1,17 +1,29 @@
-# The name of the relevant project account.
+# (str). The name of the relevant project account.
 account: 
-# Name of species being analyzed
-species_name: 
-# Directory for final output files.
-output_directory_path: 
-# Path to PacBio sequence file.
-pacbio_hifi_sequence_file:
-# Use Hi-C data during assembly? (1 = Yes/2 = No/3 = Both).
-use_hic_data:
-# List of Hi-C sequence files if avalable (optional).
-hic_sequence_files:
-- 
-# Name of BUSCO lineage dataset to use for analysis.
-busco_dataset_name: 
-# Number of purge_dups rounds.
-purge_dups_rounds: 
+# (str). Conda environment for assembly (gwf, pyyaml, hifiadapterfilt, hifiasm, purge_dups).
+condaEnvironment01: 
+# (str). Conda environment for quality control (gwf, pyyaml, busco).
+condaEnvironment02: 
+# (str). Name of species being analyzed
+speciesName: 
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: 
+# (str). Directory for intermediate files.
+workingDirectoryPath: 
+# (str). Directory for final output files. Can be left empty (If left empty, output file will be placed within 'working_directory_path').
+outputDirectoryPath: 
+# (list). Path to PacBio HiFi sequence file. Used to create a primary assembly.
+pacbioHifiSequenceFiles:
+  - 
+# (list). List of Hi-C sequence files if avalable (optional). Used to haplotype resolve assembly.
+hicSequenceFiles:
+  - 
+# (int). Use Hi-C data during assembly? (1 = Yes | 2 = No | 3 = Both).
+useHicData: 
+# (str). Name of BUSCO lineage dataset to use for analysis.
+buscoDatasetName: 
+# (int). Whether the HiFi data is from several individuals or a single individual. (0 = Single individual | 1 = Multiple individuals)
+# 0: hifiasm -l 1 -s 0.75, 1: hifiasm -l 3 -s 0.1
+poolSeqData: 
+# (int). Number of purge_dups rounds.
+nPurgeRounds: 

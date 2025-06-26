@@ -1,0 +1,29 @@
+# (str). The name of the relevant project account.
+account: EcoGenetics
+# (str). Conda environment for assembly (gwf, pyyaml, ).
+condaEnvironment01: btk
+# (str). Name of species being analyzed
+speciesName: Lepidocyrtus lignorum
+# (str.) Taxonomic group. Can be left empty.
+taxonomicGroup: Collembola
+# (str). Directory for intermediate files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps
+# (str). Directory for final output files. Can be left empty (If left empty, output file will be placed within 'working_directory_path').
+outputDirectoryPath: 
+# (str). Path to genome assembly file for quality control.
+genomeAssemblyFile: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Lepidocyrtus_lignorum/draft_assembly/purge_dups_primary/02/LepLig.purged.fa
+sampleSetup:
+  sampleName: L_lig_m84108_241204_183609_s3
+  datatype: pacbiohifi
+  # (list). List of paths to sequencing files.
+  sequencingFiles:
+    - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Lepidocyrtus_lignorum/L_lig_m84108_241204_183609_s3.hifi_reads.bc2036.fq.gz
+databases:
+  busco:
+    path: /faststorage/project/EcoGenetics/databases/BUSCO_062025
+    # (list). Names of BUSCO datasets.
+    lineages:
+      - arthropoda_odb10
+  uniprotPath: /faststorage/project/EcoGenetics/databases/UniProt_062025/reference_proteomes.dmnd
+  ncbiTaxdumpPath: /faststorage/project/EcoGenetics/databases/NCBI_Taxdump_062025
+  ncbiNtPath: /faststorage/project/EcoGenetics/databases/NCBI_nt_062025

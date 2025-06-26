@@ -1,10 +1,11 @@
 #!/bin/env python3
 from gwf import AnonymousTarget
-import os, glob
+from gwf.executors import Conda
+import os, yaml
 
 ########################## Functions ##########################
 
-def species_abbreviation(species_name: str) -> str:
+def speciesAbbreviation(species_name: str) -> str:
 	"""Creates species abbreviation from species name.
 
 	:param str species_name:
@@ -14,11 +15,98 @@ def species_abbreviation(species_name: str) -> str:
 	species = species[0].upper() + species[1:3]
 	return genus + species
 
+def software_versions(environments: list, packages: list) -> dict:
+	environmentDict = {}
+	for environment in environments:
+		environmentDict[environment] = []
+		if os.path.isdir(environment):
+			environmentJson = yaml.safe_load(os.popen(f'conda list --prefix {environment} --json'))
+			for package in environmentJson:
+				if package['name'] in packages:
+					environmentDict[environment].append({'name': package['name'], 'version': package['version']})
+		elif type(environment) == str:
+			environmentJson = yaml.safe_load(os.popen(f'conda list --name {environment} --json'))
+			for package in environmentJson:
+				if package['name'] in packages:
+					environmentDict[environment].append({'name': package['name'], 'version': package['version']})
+	return environmentDict
+
+def software_versions_to_string(environmentDict: dict) -> str:
+	outputString = '#environment\tpackage\tversion\n'
+	for environment in environmentDict:
+		for package in environmentDict[environment]:
+			outputString += f"{environment}\t{package['name']}\t{package['version']}\n"
+	return outputString
+
 #------------------------------------------------------------------------
 ########################## Draft assembly HiFi ##########################
 #------------------------------------------------------------------------
 
-def hifiadapterfilt(pacbio_hifi_files: list, output_directory: str, species_name: str, hifiadapterfilt_directory: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/HiFiAdapterFilt'):
+# def hifiadapterfilt(pacbioHifiFiles: list, outputDirectory: str, speciesName: str, hifiadapterfiltDirectory: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/HiFiAdapterFilt'):
+# 	"""
+# 	Template: Removes remaining adapters from PacBio HiFi reads.
+	
+# 	Template I/O::
+	
+# 		inputs = {}
+# 		outputs = {}
+	
+# 	:param
+# 	"""
+# 	inputs = {'pbhifi': pacbioHifiFiles}
+# 	if pacbioHifiFiles[0].endswith('.gz'):
+# 		infile = f'<(zcat {" ".join(pacbioHifiFiles)})'
+# 	else:
+# 		infile = f'<(cat {" ".join(pacbioHifiFiles)})'
+# 	outputs = {'filt': f'{outputDirectory}/HiFiAdapterFilt/{speciesAbbreviation(speciesName)}.filt.fastq.gz',
+#                'cont': f'{outputDirectory}/HiFiAdapterFilt/{speciesAbbreviation(speciesName)}.contaminant.blastout',
+#                'block': f'{outputDirectory}/HiFiAdapterFilt/{speciesAbbreviation(speciesName)}.blocklist',
+#                'stats': f'{outputDirectory}/HiFiAdapterFilt/{speciesAbbreviation(speciesName)}.stats'}
+# 	protect = [outputs['filt'], outputs['stats']]
+# 	options = {
+# 		'cores': 30,
+# 		'memory': '30g',
+# 		'walltime': '06:00:00'
+# 	}
+# 	spec = f"""
+# 	# Sources environment
+# 	if [ "$USER" == "jepe" ]; then
+# 		source /home/"$USER"/.bashrc
+# 		source activate assembly
+# 	fi
+	
+# 	echo "START: $(date)"
+# 	echo "JobID: $SLURM_JOBID"
+	
+# 	[ -d {outputDirectory}/HiFiAdapterFilt ] || mkdir -p {outputDirectory}/HiFiAdapterFilt
+
+# 	cd {outputDirectory}/HiFiAdapterFilt
+
+# 	bgzip \\
+# 		-c \\
+# 		{infile} \\
+# 		> prog.fastq.gz
+
+# 	export PATH=$PATH:{hifiadapterfiltDirectory}
+# 	export PATH=$PATH:{hifiadapterfiltDirectory}/DB
+
+# 	bash {hifiadapterfiltDirectory}/pbadapterfilt.sh \\
+# 		-t {options['cores']} \\
+# 		-p prog \\
+# 		-o {outputDirectory}/HiFiAdapterFilt
+
+# 	mv {outputDirectory}/HiFiAdapterFilt/prog.filt.fastq.gz {outputs['filt']}
+#     mv {outputDirectory}/HiFiAdapterFilt/prog.contaminant.blastout {outputs['cont']}
+#     mv {outputDirectory}/HiFiAdapterFilt/prog.blocklist {outputs['block']}
+#     mv {outputDirectory}/HiFiAdapterFilt/prog.stats {outputs['stats']}
+#     rm {outputDirectory}/HiFiAdapterFilt/prog.fastq.gz
+	
+# 	echo "END: $(date)"
+# 	echo "$(jobinfo "$SLURM_JOBID")"
+# 	"""
+# 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+def hifiadapterfilt(pacbioHifiFiles: list, outputDirectory: str, speciesName: str, environment: str, hifiAdapterFiltDirectory: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/HiFiAdapterFilt'):
 	"""
 	Template: Removes remaining adapters from PacBio HiFi reads.
 	
@@ -29,15 +117,11 @@ def hifiadapterfilt(pacbio_hifi_files: list, output_directory: str, species_name
 	
 	:param
 	"""
-	inputs = {'pbhifi': pacbio_hifi_files}
-	if pacbio_hifi_files[0].endswith('.gz'):
-		infile = f'<(zcat {" ".join(pacbio_hifi_files)})'
-	else:
-		infile = f'<(cat {" ".join(pacbio_hifi_files)})'
-	outputs = {'filt': f'{output_directory}/HiFiAdapterFilt/{species_abbreviation(species_name)}.filt.fastq.gz',
-               'cont': f'{output_directory}/HiFiAdapterFilt/{species_abbreviation(species_name)}.contaminant.blastout',
-               'block': f'{output_directory}/HiFiAdapterFilt/{species_abbreviation(species_name)}.blocklist',
-               'stats': f'{output_directory}/HiFiAdapterFilt/{species_abbreviation(species_name)}.stats'}
+	inputs = {'pbhifi': pacbioHifiFiles}
+	outputs = {'filt': f'{outputDirectory}/HiFiAdapterFilt/{speciesAbbreviation(speciesName)}.filt.fastq.gz',
+               'cont': f'{outputDirectory}/HiFiAdapterFilt/{speciesAbbreviation(speciesName)}.contaminant.blastout',
+               'block': f'{outputDirectory}/HiFiAdapterFilt/{speciesAbbreviation(speciesName)}.blocklist',
+               'stats': f'{outputDirectory}/HiFiAdapterFilt/{speciesAbbreviation(speciesName)}.stats'}
 	protect = [outputs['filt'], outputs['stats']]
 	options = {
 		'cores': 30,
@@ -45,44 +129,40 @@ def hifiadapterfilt(pacbio_hifi_files: list, output_directory: str, species_name
 		'walltime': '06:00:00'
 	}
 	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
-	
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
 	
-	[ -d {output_directory}/HiFiAdapterFilt ] || mkdir -p {output_directory}/HiFiAdapterFilt
+	[ -d {outputDirectory}/HiFiAdapterFilt ] || mkdir -p {outputDirectory}/HiFiAdapterFilt
 
-	cd {output_directory}/HiFiAdapterFilt
+	cd {outputDirectory}/HiFiAdapterFilt
+
+	export PATH=$PATH:{hifiAdapterFiltDirectory}
+	export PATH=$PATH:{hifiAdapterFiltDirectory}/DB
 
 	bgzip \\
 		-c \\
-		{infile} \\
+		{'<(zcat ' + ' '.join(pacbioHifiFiles) + ')' if pacbioHifiFiles[0].endswith('.gz') else '<(cat ' + ' '.join(pacbioHifiFiles) + ')'} \\
 		> prog.fastq.gz
 
-	export PATH=$PATH:{hifiadapterfilt_directory}
-	export PATH=$PATH:{hifiadapterfilt_directory}/DB
-
-	bash {hifiadapterfilt_directory}/pbadapterfilt.sh \\
+	bash {hifiAdapterFiltDirectory}/hifiadapterfilt.sh \\
 		-t {options['cores']} \\
 		-p prog \\
-		-o {output_directory}/HiFiAdapterFilt
+		-o {outputDirectory}/HiFiAdapterFilt
 
-	mv {output_directory}/HiFiAdapterFilt/prog.filt.fastq.gz {outputs['filt']}
-    mv {output_directory}/HiFiAdapterFilt/prog.contaminant.blastout {outputs['cont']}
-    mv {output_directory}/HiFiAdapterFilt/prog.blocklist {outputs['block']}
-    mv {output_directory}/HiFiAdapterFilt/prog.stats {outputs['stats']}
-    rm {output_directory}/HiFiAdapterFilt/prog.fastq.gz
+	mv {outputDirectory}/HiFiAdapterFilt/prog.filt.fastq.gz {outputs['filt']}
+	mv {outputDirectory}/HiFiAdapterFilt/prog.contaminant.blastout {outputs['cont']}
+	mv {outputDirectory}/HiFiAdapterFilt/prog.blocklist {outputs['block']}
+	mv {outputDirectory}/HiFiAdapterFilt/prog.stats {outputs['stats']}
+	rm {outputDirectory}/HiFiAdapterFilt/prog.fastq.gz
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec, executor=Conda(environment))
 
-def hifiasm_primary(hifi_sequence_file: str, output_directory: str, species_name: str, similarity_threshold: int = 0.1, purge_level: int = 3):
+def hifiasm_primary(hifiSequenceFile: str, outputDirectory: str, speciesName: str, environment: str, similarityThreshold: float = 0.1, purgeLevel: int = 3):
 	"""
 	Template: Create draft genome assembly using PacBio HiFi data.
 	
@@ -93,23 +173,23 @@ def hifiasm_primary(hifi_sequence_file: str, output_directory: str, species_name
 	
 	:param
 	"""
-	inputs = {'hifi': hifi_sequence_file}
-	outputs = {'fasta': f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.p_ctg.fasta',
-			   'primary': [f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.p_ctg.gfa',
-				  		   f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.p_ctg.lowQ.bed',
-						   f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.p_ctg.noseq.gfa'],
-			   'alt': [f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.a_ctg.gfa',
-				  	   f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.a_ctg.lowQ.bed',
-					   f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.a_ctg.noseq.gfa'],
-			   'raw': [f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.r_utg.gfa',
-				  	   f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.r_utg.lowQ.bed',
-					   f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.r_utg.noseq.gfa'],
-			   'nobub': [f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.p_utg.gfa',
-				  	   	 f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.p_utg.lowQ.bed',
-					   	 f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.p_utg.noseq.gfa'],
-			   'other': [f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.ec.bin',
-			   			 f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.ovlp.reverse.bin',
-						 f'{output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.ovlp.source.bin']}
+	inputs = {'hifi': hifiSequenceFile}
+	outputs = {'fasta': f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.p_ctg.fasta',
+			   'primary': [f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.p_ctg.gfa',
+				  		   f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.p_ctg.lowQ.bed',
+						   f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.p_ctg.noseq.gfa'],
+			   'alt': [f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.a_ctg.gfa',
+				  	   f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.a_ctg.lowQ.bed',
+					   f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.a_ctg.noseq.gfa'],
+			   'raw': [f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.r_utg.gfa',
+				  	   f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.r_utg.lowQ.bed',
+					   f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.r_utg.noseq.gfa'],
+			   'nobub': [f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.p_utg.gfa',
+				  	   	 f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.p_utg.lowQ.bed',
+					   	 f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.p_utg.noseq.gfa'],
+			   'other': [f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.ec.bin',
+			   			 f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.ovlp.reverse.bin',
+						 f'{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.ovlp.source.bin']}
 	protect = [outputs['fasta'], outputs['primary'][0], outputs['primary'][1], outputs['primary'][2]]
 	options = {
 		'cores': 32,
@@ -117,82 +197,92 @@ def hifiasm_primary(hifi_sequence_file: str, output_directory: str, species_name
 		'walltime': '72:00:00'
 	}
 	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
-	
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
 	
-	[ -d {output_directory}/hifiasm_primary ] || mkdir -p {output_directory}/hifiasm_primary
+	[ -d {outputDirectory}/hifiasm_primary ] || mkdir -p {outputDirectory}/hifiasm_primary
 	
 	hifiasm \\
 		-t {options['cores']} \\
-		-s {similarity_threshold} \\
-		-l {purge_level} \\
+		-s {similarityThreshold} \\
+		-l {purgeLevel} \\
 		--primary \\
-		-o {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog \\
-		{hifi_sequence_file}
+		-o {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog \\
+		{hifiSequenceFile}
 	
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.p_ctg.gfa {outputs['primary'][0]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.p_ctg.lowQ.bed {outputs['primary'][1]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.p_ctg.noseq.gfa {outputs['primary'][2]}
-    mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.a_ctg.gfa {outputs['alt'][0]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.a_ctg.lowQ.bed {outputs['alt'][1]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.a_ctg.noseq.gfa {outputs['alt'][2]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.r_utg.gfa {outputs['raw'][0]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.r_utg.lowQ.bed {outputs['raw'][1]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.r_utg.noseq.gfa {outputs['raw'][2]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.p_utg.gfa {outputs['nobub'][0]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.p_utg.lowQ.bed {outputs['nobub'][1]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.p_utg.noseq.gfa {outputs['nobub'][2]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.ec.bin {outputs['other'][0]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.ovlp.reverse.bin {outputs['other'][1]}
-	mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.prog.ovlp.source.bin {outputs['other'][2]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.p_ctg.gfa {outputs['primary'][0]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.p_ctg.lowQ.bed {outputs['primary'][1]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.p_ctg.noseq.gfa {outputs['primary'][2]}
+    mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.a_ctg.gfa {outputs['alt'][0]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.a_ctg.lowQ.bed {outputs['alt'][1]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.a_ctg.noseq.gfa {outputs['alt'][2]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.r_utg.gfa {outputs['raw'][0]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.r_utg.lowQ.bed {outputs['raw'][1]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.r_utg.noseq.gfa {outputs['raw'][2]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.p_utg.gfa {outputs['nobub'][0]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.p_utg.lowQ.bed {outputs['nobub'][1]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.p_utg.noseq.gfa {outputs['nobub'][2]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.ec.bin {outputs['other'][0]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.ovlp.reverse.bin {outputs['other'][1]}
+	mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.prog.ovlp.source.bin {outputs['other'][2]}
 	
 	awk \\
-        'BEGIN{{FS="\\t"}}
-        {{if ($0 ~ /^S/)
-            {{print ">"$2"\\n"$3}}
-		}}' \\
-        {outputs['primary'][0]} \\
-    | fold \\
-        > {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.p_ctg.prog.fasta
-
-    mv {output_directory}/hifiasm_primary/{species_abbreviation(species_name)}.p_ctg.prog.fasta {outputs['fasta']}
-
-	awk \\
-		'BEGIN{{OFS="\\t"}}
-		{{if ($0 ~ /^>/)
-			{{if (sequence_length)
-				{{print sequence_name, sequence_length}}
-			total_length += sequence_length
-			sequence_name = $0
-			sequence_length = 0
-			sequence_number += 1
-			next
-			}}
-		sequence_length += length($0)
+        'BEGIN{{
+			FS = "\\t"
 		}}
-		END{{if (sequence_length)
-			{{print sequence_name, sequence_length}}
-		print sequence_number"_sequences", total_length + sequence_length
+        {{
+			if ($0 ~ /^S/)
+            {{
+				print ">"$2"\\n"$3
+			}}
 		}}' \\
-		{outputs['fasta']} \\
-		> {output_directory}/hifiasm_primary/sequences.tsv
+        {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.p_ctg.gfa \\
+    | fold \\
+        > {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.p_ctg.prog.fasta
 
-	last_line=($(tail -n 1 {output_directory}/hifiasm_primary/sequences.tsv))
+    mv {outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.p_ctg.prog.fasta {outputs['fasta']}
 
-	mv {output_directory}/hifiasm_primary/sequences.tsv {output_directory}/hifiasm_primary/sequences_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
+	awk \\
+		'BEGIN{{
+			OFS="\\t"
+		}}
+		{{
+			if ($0 ~ /^>/)
+			{{
+				if (sequence_length)
+				{{
+					print sequence_name, sequence_length
+				}}
+				total_length += sequence_length
+				sequence_name = $0
+				sequence_length = 0
+				sequence_number += 1
+				next
+			}}
+			sequence_length += length($0)
+		}}
+		END{{
+			if (sequence_length)
+			{{
+				print sequence_name, sequence_length
+			}}
+			print sequence_number"_sequences", total_length + sequence_length
+		}}' \\
+		{outputDirectory}/hifiasm_primary/{speciesAbbreviation(speciesName)}.p_ctg.fasta \\
+		> {outputDirectory}/hifiasm_primary/sequences.tsv
+
+	last_line=($(tail -n 1 {outputDirectory}/hifiasm_primary/sequences.tsv))
+
+	mv {outputDirectory}/hifiasm_primary/sequences.tsv {outputDirectory}/hifiasm_primary/sequences_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec, executor=Conda(environment))
 
-def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_directory: str, species_name: str, similarity_threshold: int = 0.1, purge_level: int = 3):
+def hifiasm_hic(hifiSequenceFile: str, hicSequenceFiles: list, outputDirectory: str, speciesName: str, environment: str, similarityThreshold: float = 0.1, purgeLevel: int = 3):
 	"""
 	Template: Create draft genome assembly using PacBio HiFi data.
 	
@@ -203,31 +293,31 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 	
 	:param
 	"""
-	inputs = {'hifi': hifi_sequence_file,
-			  'hic': hic_sequence_files}
-	outputs = {'fasta': [f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_ctg.fasta',
-					  	 f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap1.p_ctg.fasta',
-						 f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap2.p_ctg.fasta'],
-			   'primary': [f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_ctg.gfa',
-				  		   f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_ctg.lowQ.bed',
-						   f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_ctg.noseq.gfa'],
-			   'hap1': [f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap1.p_ctg.gfa',
-				  		f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap1.p_ctg.lowQ.bed',
-						f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap1.p_ctg.noseq.gfa'],
-			   'hap2': [f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap2.p_ctg.gfa',
-				  		f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap2.p_ctg.lowQ.bed',
-						f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap2.p_ctg.noseq.gfa'],
-			   'raw': [f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.r_utg.gfa',
-				  	   f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.r_utg.lowQ.bed',
-					   f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.r_utg.noseq.gfa'],
-			   'nobub': [f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_utg.gfa',
-				  	   	 f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_utg.lowQ.bed',
-					   	 f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_utg.noseq.gfa'],
-			   'other': [f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.ec.bin',
-			   			 f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.ovlp.reverse.bin',
-						 f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.ovlp.source.bin',
-						 f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.lk.bin',
-						 f'{output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.tlb.bin']}
+	inputs = {'hifi': hifiSequenceFile,
+			  'hic': hicSequenceFiles}
+	outputs = {'fasta': [f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.p_ctg.fasta',
+					  	 f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap1.p_ctg.fasta',
+						 f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap2.p_ctg.fasta'],
+			   'primary': [f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.p_ctg.gfa',
+				  		   f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.p_ctg.lowQ.bed',
+						   f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.p_ctg.noseq.gfa'],
+			   'hap1': [f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap1.p_ctg.gfa',
+				  		f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap1.p_ctg.lowQ.bed',
+						f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap1.p_ctg.noseq.gfa'],
+			   'hap2': [f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap2.p_ctg.gfa',
+				  		f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap2.p_ctg.lowQ.bed',
+						f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap2.p_ctg.noseq.gfa'],
+			   'raw': [f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.r_utg.gfa',
+				  	   f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.r_utg.lowQ.bed',
+					   f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.r_utg.noseq.gfa'],
+			   'nobub': [f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.p_utg.gfa',
+				  	   	 f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.p_utg.lowQ.bed',
+					   	 f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.p_utg.noseq.gfa'],
+			   'other': [f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.ec.bin',
+			   			 f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.ovlp.reverse.bin',
+						 f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.ovlp.source.bin',
+						 f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.lk.bin',
+						 f'{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.tlb.bin']}
 	protect = outputs['fasta'] + outputs['hap1'] + outputs['hap2']
 	options = {
 		'cores': 32,
@@ -235,156 +325,197 @@ def hifiasm_hic(hifi_sequence_file: str, hic_sequence_files: list, output_direct
 		'walltime': '72:00:00'
 	}
 	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
-	
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
 	
-	[ -d {output_directory}/hifiasm_hic ] || mkdir -p {output_directory}/hifiasm_hic
+	[ -d {outputDirectory}/hifiasm_hic ] || mkdir -p {outputDirectory}/hifiasm_hic
 	
 	hifiasm \\
 		-t {options['cores']} \\
-		-s {similarity_threshold} \\
-		-l {purge_level} \\
-		-o {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog \\
-		--h1 {hic_sequence_files[0]} \\
-		--h2 {hic_sequence_files[1]} \\
-		{hifi_sequence_file}
+		-s {similarityThreshold} \\
+		-l {purgeLevel} \\
+		-o {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog \\
+		--h1 {hicSequenceFiles[0]} \\
+		--h2 {hicSequenceFiles[1]} \\
+		{hifiSequenceFile}
 	
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.p_ctg.gfa {outputs['primary'][0]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.p_ctg.lowQ.bed {outputs['primary'][1]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.p_ctg.noseq.gfa {outputs['primary'][2]}
-    mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.hap1.p_ctg.gfa {outputs['hap1'][0]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.hap1.p_ctg.lowQ.bed {outputs['hap1'][1]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.hap1.p_ctg.noseq.gfa {outputs['hap1'][2]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.hap2.p_ctg.gfa {outputs['hap2'][0]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.hap2.p_ctg.lowQ.bed {outputs['hap2'][1]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.hap2.p_ctg.noseq.gfa {outputs['hap2'][2]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.r_utg.gfa {outputs['raw'][0]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.r_utg.lowQ.bed {outputs['raw'][1]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.r_utg.noseq.gfa {outputs['raw'][2]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.p_utg.gfa {outputs['nobub'][0]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.p_utg.lowQ.bed {outputs['nobub'][1]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.p_utg.noseq.gfa {outputs['nobub'][2]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.ec.bin {outputs['other'][0]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.ovlp.reverse.bin {outputs['other'][1]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.ovlp.source.bin {outputs['other'][2]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.lk.bin {outputs['other'][3]}
-	mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.prog.hic.tlb.bin {outputs['other'][4]}
-	
-	awk \\
-        'BEGIN{{FS="\\t"}}
-        {{if ($0 ~ /^S/)
-            {{print ">"$2"\\n"$3}}}}' \\
-        {outputs['primary'][0]} \\
-    | fold \\
-        > {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_ctg.prog.fasta
-
-    mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.p_ctg.prog.fasta {outputs['fasta'][0]}
-
-	awk \\
-        'BEGIN{{FS="\\t"}}
-        {{if ($0 ~ /^S/)
-            {{print ">"$2"\\n"$3}}}}' \\
-        {outputs['hap1'][0]} \\
-    | fold \\
-        > {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap1.p_ctg.prog.fasta
-
-    mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap1.p_ctg.prog.fasta {outputs['fasta'][1]}
-
-	awk \\
-        'BEGIN{{FS="\\t"}}
-        {{if ($0 ~ /^S/)
-            {{print ">"$2"\\n"$3}}}}' \\
-        {outputs['hap2'][0]} \\
-    | fold \\
-        > {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap2.p_ctg.prog.fasta
-
-    mv {output_directory}/hifiasm_hic/{species_abbreviation(species_name)}.hic.hap2.p_ctg.prog.fasta {outputs['fasta'][2]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.p_ctg.gfa {outputs['primary'][0]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.p_ctg.lowQ.bed {outputs['primary'][1]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.p_ctg.noseq.gfa {outputs['primary'][2]}
+    mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.hap1.p_ctg.gfa {outputs['hap1'][0]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.hap1.p_ctg.lowQ.bed {outputs['hap1'][1]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.hap1.p_ctg.noseq.gfa {outputs['hap1'][2]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.hap2.p_ctg.gfa {outputs['hap2'][0]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.hap2.p_ctg.lowQ.bed {outputs['hap2'][1]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.hap2.p_ctg.noseq.gfa {outputs['hap2'][2]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.r_utg.gfa {outputs['raw'][0]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.r_utg.lowQ.bed {outputs['raw'][1]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.r_utg.noseq.gfa {outputs['raw'][2]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.p_utg.gfa {outputs['nobub'][0]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.p_utg.lowQ.bed {outputs['nobub'][1]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.p_utg.noseq.gfa {outputs['nobub'][2]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.ec.bin {outputs['other'][0]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.ovlp.reverse.bin {outputs['other'][1]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.ovlp.source.bin {outputs['other'][2]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.lk.bin {outputs['other'][3]}
+	mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.prog.hic.tlb.bin {outputs['other'][4]}
 	
 	awk \\
-		'BEGIN{{OFS="\\t"}}
-		{{if ($0 ~ /^>/)
-			{{if (sequence_length)
-				{{print sequence_name, sequence_length}}
-			total_length += sequence_length
-			sequence_name = $0
-			sequence_length = 0
-			sequence_number += 1
-			next
-			}}
-		sequence_length += length($0)
+        'BEGIN{{
+			FS = "\\t"
 		}}
-		END{{if (sequence_length)
-			{{print sequence_name, sequence_length}}
-		print sequence_number"_sequences", total_length + sequence_length
+        {{
+			if ($0 ~ /^S/)
+            {{
+				print ">"$2"\\n"$3
+			}}
 		}}' \\
-		{outputs['fasta'][0]} \\
-		> {output_directory}/hifiasm_hic/sequences_primary.tsv
+        {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.p_ctg.gfa \\
+    | fold \\
+        > {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.p_ctg.prog.fasta
 
-	last_line=($(tail -n 1 {output_directory}/hifiasm_hic/sequences_primary.tsv))
-
-	mv {output_directory}/hifiasm_hic/sequences_primary.tsv {output_directory}/hifiasm_hic/sequences_primary_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
+    mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.p_ctg.prog.fasta {outputs['fasta'][0]}
 
 	awk \\
-		'BEGIN{{OFS="\\t"}}
-		{{if ($0 ~ /^>/)
-			{{if (sequence_length)
-				{{print sequence_name, sequence_length}}
-			total_length += sequence_length
-			sequence_name = $0
-			sequence_length = 0
-			sequence_number += 1
-			next
-			}}
-		sequence_length += length($0)
+        'BEGIN{{
+			FS = "\\t"
 		}}
-		END{{if (sequence_length)
-			{{print sequence_name, sequence_length}}
-		print sequence_number"_sequences", total_length + sequence_length
+        {{
+			if ($0 ~ /^S/)
+            {{
+				print ">"$2"\\n"$3
+			}}
 		}}' \\
-		{outputs['fasta'][1]} \\
-		> {output_directory}/hifiasm_hic/sequences_hap1.tsv
+        {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap1.p_ctg.gfa \\
+    | fold \\
+        > {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap1.p_ctg.prog.fasta
 
-	last_line=($(tail -n 1 {output_directory}/hifiasm_hic/sequences_hap1.tsv))
-
-	mv {output_directory}/hifiasm_hic/sequences_hap1.tsv {output_directory}/hifiasm_hic/sequences_hap1_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
+    mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap1.p_ctg.prog.fasta {outputs['fasta'][1]}
 
 	awk \\
-		'BEGIN{{OFS="\\t"}}
-		{{if ($0 ~ /^>/)
-			{{if (sequence_length)
-				{{print sequence_name, sequence_length}}
-			total_length += sequence_length
-			sequence_name = $0
-			sequence_length = 0
-			sequence_number += 1
-			next
-			}}
-		sequence_length += length($0)
+        'BEGIN{{
+			FS = "\\t"
 		}}
-		END{{if (sequence_length)
-			{{print sequence_name, sequence_length}}
-		print sequence_number"_sequences", total_length + sequence_length
+        {{
+			if ($0 ~ /^S/)
+            {{
+				print ">"$2"\\n"$3
+			}}
 		}}' \\
-		{outputs['fasta'][2]} \\
-		> {output_directory}/hifiasm_hic/sequences_hap2.tsv
+        {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap2.p_ctg.gfa \\
+    | fold \\
+        > {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap2.p_ctg.prog.fasta
 
-	last_line=($(tail -n 1 {output_directory}/hifiasm_hic/sequences_hap2.tsv))
+    mv {outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap2.p_ctg.prog.fasta {outputs['fasta'][2]}
+	
+	awk \\
+		'BEGIN{{
+			OFS = "\\t"
+		}}
+		{{
+			if ($0 ~ /^>/)
+			{{
+				if (sequence_length)
+				{{
+					print sequence_name, sequence_length
+				}}
+				total_length += sequence_length
+				sequence_name = $0
+				sequence_length = 0
+				sequence_number += 1
+				next
+			}}
+			sequence_length += length($0)
+		}}
+		END{{
+			if (sequence_length)
+			{{
+				print sequence_name, sequence_length
+			}}
+			print sequence_number"_sequences", total_length + sequence_length
+		}}' \\
+		{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.p_ctg.fasta \\
+		> {outputDirectory}/hifiasm_hic/sequences_primary.tsv
 
-	mv {output_directory}/hifiasm_hic/sequences_hap2.tsv {output_directory}/hifiasm_hic/sequences_hap2_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
+	last_line=($(tail -n 1 {outputDirectory}/hifiasm_hic/sequences_primary.tsv))
+
+	mv {outputDirectory}/hifiasm_hic/sequences_primary.tsv {outputDirectory}/hifiasm_hic/sequences_primary_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
+
+	awk \\
+		'BEGIN{{
+			OFS = "\\t"
+		}}
+		{{
+			if ($0 ~ /^>/)
+			{{
+				if (sequence_length)
+				{{
+					print sequence_name, sequence_length
+				}}
+				total_length += sequence_length
+				sequence_name = $0
+				sequence_length = 0
+				sequence_number += 1
+				next
+			}}
+			sequence_length += length($0)
+		}}
+		END{{
+			if (sequence_length)
+			{{
+				print sequence_name, sequence_length
+			}}
+			print sequence_number"_sequences", total_length + sequence_length
+		}}' \\
+		{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap1.p_ctg.fasta \\
+		> {outputDirectory}/hifiasm_hic/sequences_hap1.tsv
+
+	last_line=($(tail -n 1 {outputDirectory}/hifiasm_hic/sequences_hap1.tsv))
+
+	mv {outputDirectory}/hifiasm_hic/sequences_hap1.tsv {outputDirectory}/hifiasm_hic/sequences_hap1_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
+
+	awk \\
+		'BEGIN{{
+			OFS = "\\t"
+		}}
+		{{
+			if ($0 ~ /^>/)
+			{{
+				if (sequence_length)
+				{{
+					print sequence_name, sequence_length
+				}}
+				total_length += sequence_length
+				sequence_name = $0
+				sequence_length = 0
+				sequence_number += 1
+				next
+			}}
+			sequence_length += length($0)
+		}}
+		END{{
+			if (sequence_length)
+			{{
+				print sequence_name, sequence_length
+			}}
+			print sequence_number"_sequences", total_length + sequence_length
+		}}' \\
+		{outputDirectory}/hifiasm_hic/{speciesAbbreviation(speciesName)}.hic.hap2.p_ctg.fasta \\
+		> {outputDirectory}/hifiasm_hic/sequences_hap2.tsv
+
+	last_line=($(tail -n 1 {outputDirectory}/hifiasm_hic/sequences_hap2.tsv))
+
+	mv {outputDirectory}/hifiasm_hic/sequences_hap2.tsv {outputDirectory}/hifiasm_hic/sequences_hap2_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec, executor=Conda(environment))
 
 ########################## Quality Assessment ##########################
-def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_path: str = '/faststorage/project/EcoGenetics/databases/BUSCO'):
+def busco_genome(genomeAssemblyFile: str, buscoDataset: str, environment: str, buscoDownloadPath: str = '/faststorage/project/EcoGenetics/databases/BUSCO'):
 	"""
 	Template: Runs BUSCO analysis on genome assembly.
 	
@@ -395,45 +526,42 @@ def busco_genome(genome_assembly_file: str, busco_dataset: str, busco_download_p
 	
 	:param
 	"""
-	inputs = {'genome': genome_assembly_file}
-	outputs = {'stattxt': f'{os.path.dirname(genome_assembly_file)}/busco_{os.path.basename(genome_assembly_file)}/short_summary.specific.{busco_dataset}.busco_{os.path.basename(genome_assembly_file)}.txt',
-			   'statjson': f'{os.path.dirname(genome_assembly_file)}/busco_{os.path.basename(genome_assembly_file)}/short_summary.specific.{busco_dataset}.busco_{os.path.basename(genome_assembly_file)}.json'}
+	inputs = {'genome': genomeAssemblyFile}
+	outputs = {'stattxt': f'{os.path.dirname(genomeAssemblyFile)}/busco_{os.path.basename(genomeAssemblyFile)}/short_summary.specific.{buscoDataset}.busco_{os.path.basename(genomeAssemblyFile)}.txt',
+			   'statjson': f'{os.path.dirname(genomeAssemblyFile)}/busco_{os.path.basename(genomeAssemblyFile)}/short_summary.specific.{buscoDataset}.busco_{os.path.basename(genomeAssemblyFile)}.json'}
 	protect = [outputs['stattxt'], outputs['statjson']]
 	options = {
 		'cores': 30,
-		'memory': '50g',
+		'memory': '200g',
 		'walltime': '10:00:00'
 	}
 	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
-	
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
 	
-	cd {os.path.dirname(genome_assembly_file)}
+	cd {os.path.dirname(genomeAssemblyFile)}
 
 	busco \\
 		--cpu {options['cores']} \\
 		--force \\
-		--in {genome_assembly_file} \\
+		--metaeuk \\
+		--in {genomeAssemblyFile} \\
 		--mode genome \\
-		--out busco_{os.path.basename(genome_assembly_file)} \\
-		--out_path {os.path.dirname(genome_assembly_file)} \\
-		--download_path {busco_download_path} \\
-		--lineage {busco_download_path}/lineages/{busco_dataset} \\
+		--out busco_{os.path.basename(genomeAssemblyFile)} \\
+		--out_path {os.path.dirname(genomeAssemblyFile)} \\
+		--download_path {buscoDownloadPath} \\
+		--lineage {buscoDownloadPath}/lineages/{buscoDataset} \\
 		--tar \\
 		--offline
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec, executor=Conda(environment))
 
-def busco_protein(protein_sequence_file: str, busco_dataset: str, busco_download_path: str = '/faststorage/project/EcoGenetics/databases/BUSCO'):
+def busco_protein(proteinSequenceFile: str, buscoDataset: str, environment: str, buscoDownloadPath: str = '/faststorage/project/EcoGenetics/databases/BUSCO'):
 	"""
 	Template: Runs BUSCO analysis on protein sequences from an annotated gene set.
 	
@@ -444,42 +572,38 @@ def busco_protein(protein_sequence_file: str, busco_dataset: str, busco_download
 	
 	:param
 	"""
-	inputs = {'genome': protein_sequence_file}
-	outputs = {'stattxt': f'{os.path.dirname(protein_sequence_file)}/busco_{os.path.basename(protein_sequence_file)}/short_summary.specific.{busco_dataset}.busco_{os.path.basename(protein_sequence_file)}.txt',
-			   'statjson': f'{os.path.dirname(protein_sequence_file)}/busco_{os.path.basename(protein_sequence_file)}/short_summary.specific.{busco_dataset}.busco_{os.path.basename(protein_sequence_file)}.json'}
+	inputs = {'genome': proteinSequenceFile}
+	outputs = {'stattxt': f'{os.path.dirname(proteinSequenceFile)}/busco_{os.path.basename(proteinSequenceFile)}/short_summary.specific.{buscoDataset}.busco_{os.path.basename(proteinSequenceFile)}.txt',
+			   'statjson': f'{os.path.dirname(proteinSequenceFile)}/busco_{os.path.basename(proteinSequenceFile)}/short_summary.specific.{buscoDataset}.busco_{os.path.basename(proteinSequenceFile)}.json'}
 	protect = [outputs['stattxt'], outputs['statjson']]
 	options = {
 		'cores': 30,
-		'memory': '50g',
+		'memory': '200g',
 		'walltime': '10:00:00'
 	}
 	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
-	
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
 	
 	busco \\
 		--cpu {options['cores']} \\
 		--force \\
-		--in {protein_sequence_file} \\
+		--in {proteinSequenceFile} \\
 		--mode proteins \\
-		--out busco_{os.path.basename(protein_sequence_file)} \\
-		--out_path {os.path.dirname(protein_sequence_file)} \\
-		--download_path {busco_download_path} \\
-		--lineage {busco_download_path}/lineages/{busco_dataset} \\
+		--out busco_{os.path.basename(proteinSequenceFile)} \\
+		--out_path {os.path.dirname(proteinSequenceFile)} \\
+		--download_path {buscoDownloadPath} \\
+		--lineage {buscoDownloadPath}/lineages/{buscoDataset} \\
 		--tar
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec, executor=Conda(environment))
 
-def merqury(genome_assembly_file: str, pacbio_hifi_reads: str, output_directory: str):
+def merqury(genomeAssemblyFile: str, pacbioHifiReads: str, outputDirectory: str):
 	"""
 	Template: template_description
 	
@@ -490,8 +614,8 @@ def merqury(genome_assembly_file: str, pacbio_hifi_reads: str, output_directory:
 	
 	:param
 	"""
-	inputs = {'assembly': genome_assembly_file,
-		   	  'reads': pacbio_hifi_reads}
+	inputs = {'assembly': genomeAssemblyFile,
+		   	  'reads': pacbioHifiReads}
 	outputs = {}
 	options = {
 		'cores': 60,
@@ -508,13 +632,13 @@ def merqury(genome_assembly_file: str, pacbio_hifi_reads: str, output_directory:
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/merqury ] || mkdir -p {output_directory}/merqury
+	[ -d {outputDirectory}/merqury ] || mkdir -p {outputDirectory}/merqury
 	
-	cd {output_directory}/merqury
+	cd {outputDirectory}/merqury
 
 	kmersize="$( \\
 	"$(dirname "$(dirname "$(which merqury.sh)")")"/share/merqury/best_k.sh \\
-		$(seqtk size {genome_assembly_file} | cut -f 2) \\
+		$(seqtk size {genomeAssemblyFile} | cut -f 2) \\
 	| awk \\
 		'BEGIN{{FS=OFS=" "}}
 		{{if (NR == 3)
@@ -529,20 +653,20 @@ def merqury(genome_assembly_file: str, pacbio_hifi_reads: str, output_directory:
 		memory={options['memory']} \\
 		threads={options['cores']} \\
 		k="$kmersize" \\
-		output {os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}.meryl \\
-		{pacbio_hifi_reads}
+		output {os.path.basename(os.path.splitext(pacbioHifiReads)[0])}.meryl \\
+		{pacbioHifiReads}
 
 	merqury.sh \\
-		{os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}.meryl \\
-		{genome_assembly_file} \\
-		{os.path.basename(os.path.splitext(pacbio_hifi_reads)[0])}
+		{os.path.basename(os.path.splitext(pacbioHifiReads)[0])}.meryl \\
+		{genomeAssemblyFile} \\
+		{os.path.basename(os.path.splitext(pacbioHifiReads)[0])}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def blobtools_blobdir(genome_assembly_file: str, species_name: str, blastn_result_file: str, diamond_result_file: str, coverage_alignment_file: str, busco_full_table_file: str, ncbi_taxdump_directory: str = "/faststorage/project/EcoGenetics/databases/NCBI_Taxdump"):
+def blobtools_blobdir(genomeAssemblyFile: str, speciesName: str, blastnResultFile: str, diamondResultFile: str, coverageAlignmentFile: str, buscoFullTableFile: str, ncbiTaxdumpDirectory: str = "/faststorage/project/EcoGenetics/databases/NCBI_Taxdump"):
 	"""
 	Template: template_description
 	
@@ -553,11 +677,11 @@ def blobtools_blobdir(genome_assembly_file: str, species_name: str, blastn_resul
 	
 	:param
 	"""
-	inputs = {'assembly': genome_assembly_file,
-			  'blastn': blastn_result_file,
-			  'diamond': diamond_result_file,
-			  'coverage': coverage_alignment_file,
-			  'busco': busco_full_table_file}
+	inputs = {'assembly': genomeAssemblyFile,
+			  'blastn': blastnResultFile,
+			  'diamond': diamondResultFile,
+			  'coverage': coverageAlignmentFile,
+			  'busco': buscoFullTableFile}
 	outputs = {}
 	options = {
 		'cores': 32,
@@ -574,30 +698,30 @@ def blobtools_blobdir(genome_assembly_file: str, species_name: str, blastn_resul
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {os.path.dirname(genome_assembly_file)}/qc/blobtools ] || mkdir -p {os.path.dirname(genome_assembly_file)}/qc/blobtools
+	[ -d {os.path.dirname(genomeAssemblyFile)}/qc/blobtools ] || mkdir -p {os.path.dirname(genomeAssemblyFile)}/qc/blobtools
 
 	blobtools create \\
 		--threads {options['cores']} \\
-		--key assembly.alias="{species_abbreviation(species_name)}" \\
+		--key assembly.alias="{speciesAbbreviation(speciesName)}" \\
 		--key record_type="scaffold" \\
-		--key taxon.name="{species_name}" \\
-		--key taxon.genus="{species_name.split(sep=" ")[0]}" \\
-		--key taxon.species="{species_name}" \\
-		--fasta {genome_assembly_file} \\
-		--hits {blastn_result_file} \\
-		--hits {diamond_result_file} \\
+		--key taxon.name="{speciesName}" \\
+		--key taxon.genus="{speciesName.split(sep=" ")[0]}" \\
+		--key taxon.species="{speciesName}" \\
+		--fasta {genomeAssemblyFile} \\
+		--hits {blastnResultFile} \\
+		--hits {diamondResultFile} \\
 		--taxrule bestsumorder \\
-		--taxdump {ncbi_taxdump_directory} \\
-		--cov {coverage_alignment_file} \\
-		--busco {busco_full_table_file} \\
-		{os.path.dirname(genome_assembly_file)}/qc/blobtools/blobtools_{os.path.basename(genome_assembly_file)}
+		--taxdump {ncbiTaxdumpDirectory} \\
+		--cov {coverageAlignmentFile} \\
+		--busco {buscoFullTableFile} \\
+		{os.path.dirname(genomeAssemblyFile)}/qc/blobtools/blobtools_{os.path.basename(genomeAssemblyFile)}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def blobtools_blastn(genome_assembly_file: str, blast_database: str = "/faststorage/project/EcoGenetics/databases/NCBI_BLAST_DB/nt/nt"):
+def blobtools_blastn(genomeAssemblyFile: str, blastDatabase: str = "/faststorage/project/EcoGenetics/databases/NCBI_BLAST_DB/nt/nt"):
 	"""
 	Template: template_description
 	
@@ -608,8 +732,8 @@ def blobtools_blastn(genome_assembly_file: str, blast_database: str = "/faststor
 	
 	:param
 	"""
-	inputs = {'assembly': genome_assembly_file}
-	outputs = {'blast': f'{os.path.dirname(genome_assembly_file)}/qc/blastn/{os.path.basename(genome_assembly_file)}.blast.out'}
+	inputs = {'assembly': genomeAssemblyFile}
+	outputs = {'blast': f'{os.path.dirname(genomeAssemblyFile)}/qc/blastn/{os.path.basename(genomeAssemblyFile)}.blast.out'}
 	options = {
 		'cores': 32,
 		'memory': '20g',
@@ -625,27 +749,27 @@ def blobtools_blastn(genome_assembly_file: str, blast_database: str = "/faststor
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {os.path.dirname(genome_assembly_file)}/qc/blastn ] || mkdir -p {os.path.dirname(genome_assembly_file)}/qc/blastn
+	[ -d {os.path.dirname(genomeAssemblyFile)}/qc/blastn ] || mkdir -p {os.path.dirname(genomeAssemblyFile)}/qc/blastn
 	
 	blastn \\
 		-num_threads {options['cores']} \\
 		-task megablast \\
-		-db {blast_database} \\
-		-query {genome_assembly_file} \\
+		-db {blastDatabase} \\
+		-query {genomeAssemblyFile} \\
 		-outfmt "6 qseqid staxids bitscore std" \\
 		-max_target_seqs 10 \\
 		-max_hsps 1 \\
 		-evalue 1e-25 \\
-		-out {os.path.dirname(genome_assembly_file)}/qc/blastn/{os.path.basename(genome_assembly_file)}.blast.prog.out
+		-out {os.path.dirname(genomeAssemblyFile)}/qc/blastn/{os.path.basename(genomeAssemblyFile)}.blast.prog.out
 	
-	mv {os.path.dirname(genome_assembly_file)}/qc/blastn/{os.path.basename(genome_assembly_file)}.blast.prog.out {outputs['blast']}
+	mv {os.path.dirname(genomeAssemblyFile)}/qc/blastn/{os.path.basename(genomeAssemblyFile)}.blast.prog.out {outputs['blast']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def blobtools_diamond(genome_assembly_file: str, diamond_database_file: str = "/faststorage/project/EcoGenetics/databases/UniProt/reference_proteomes.dmnd"):
+def blobtools_diamond(genomeAssemblyFile: str, diamondDatabaseFile: str = "/faststorage/project/EcoGenetics/databases/UniProt/reference_proteomes.dmnd"):
 	"""
 	Template: template_description
 	
@@ -656,8 +780,8 @@ def blobtools_diamond(genome_assembly_file: str, diamond_database_file: str = "/
 	
 	:param
 	"""
-	inputs = {'assembly': genome_assembly_file}
-	outputs = {'diamond': f'{os.path.dirname(genome_assembly_file)}/qc/diamond/{os.path.basename(genome_assembly_file)}.diamond.out'}
+	inputs = {'assembly': genomeAssemblyFile}
+	outputs = {'diamond': f'{os.path.dirname(genomeAssemblyFile)}/qc/diamond/{os.path.basename(genomeAssemblyFile)}.diamond.out'}
 	options = {
 		'cores': 32,
 		'memory': '20g',
@@ -673,26 +797,26 @@ def blobtools_diamond(genome_assembly_file: str, diamond_database_file: str = "/
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {os.path.dirname(genome_assembly_file)}/qc/diamond ] || mkdir -p {os.path.dirname(genome_assembly_file)}/qc/diamond
+	[ -d {os.path.dirname(genomeAssemblyFile)}/qc/diamond ] || mkdir -p {os.path.dirname(genomeAssemblyFile)}/qc/diamond
 	
 	diamond blastx \\
 		--threads {options['cores']} \\
-		--db {diamond_database_file} \\
+		--db {diamondDatabaseFile} \\
 		--outfmt 6 qseqid staxids bitscore qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore \\
 		--sensitive \\
 		--max-target-seqs 1 \\
 		--evalue 1e-25 \\
-		--query {genome_assembly_file} \\
-		> {os.path.dirname(genome_assembly_file)}/qc/diamond/{os.path.basename(genome_assembly_file)}.diamond.prog.out
+		--query {genomeAssemblyFile} \\
+		> {os.path.dirname(genomeAssemblyFile)}/qc/diamond/{os.path.basename(genomeAssemblyFile)}.diamond.prog.out
 	
-	mv {os.path.dirname(genome_assembly_file)}/qc/diamond/{os.path.basename(genome_assembly_file)}.diamond.prog.out {outputs['diamond']}
+	mv {os.path.dirname(genomeAssemblyFile)}/qc/diamond/{os.path.basename(genomeAssemblyFile)}.diamond.prog.out {outputs['diamond']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def blobtools_coverage(genome_assembly_file: str, pacbio_hifi_reads: str):
+def blobtools_coverage(genomeAssemblyFile: str, pacbioHifiReads: str):
 	"""
 	Template: template_description
 	
@@ -703,10 +827,10 @@ def blobtools_coverage(genome_assembly_file: str, pacbio_hifi_reads: str):
 	
 	:param
 	"""
-	inputs = {'assembly': genome_assembly_file,
-		   	  'hifireads': pacbio_hifi_reads}
-	outputs = {'alignment': f'{os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam',
-			   'index': f'{os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.csi'}
+	inputs = {'assembly': genomeAssemblyFile,
+		   	  'hifireads': pacbioHifiReads}
+	outputs = {'alignment': f'{os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam',
+			   'index': f'{os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam.csi'}
 	options = {
 		'cores': 32,
 		'memory': '100g',
@@ -722,24 +846,24 @@ def blobtools_coverage(genome_assembly_file: str, pacbio_hifi_reads: str):
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {os.path.dirname(genome_assembly_file)}/qc/coverage ] || mkdir -p {os.path.dirname(genome_assembly_file)}/qc/coverage
+	[ -d {os.path.dirname(genomeAssemblyFile)}/qc/coverage ] || mkdir -p {os.path.dirname(genomeAssemblyFile)}/qc/coverage
 	
 	minimap2 \\
 		-x map-hifi \\
 		-t {options['cores']} \\
 		-a \\
-		{genome_assembly_file} \\
-		{pacbio_hifi_reads} \\
+		{genomeAssemblyFile} \\
+		{pacbioHifiReads} \\
 	| samtools sort \\
 		--threads {options['cores'] - 1} \\
 		--output-fmt BAM \\
-		-o {os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam
+		-o {os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam
 	
 	samtools index \\
 		--threads {options['cores'] - 1} \\
 		--csi \\
-		--output {os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam.csi \\
-		{os.path.dirname(genome_assembly_file)}/qc/coverage/{os.path.basename(genome_assembly_file)}.hifireads.bam
+		--output {os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam.csi \\
+		{os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -747,7 +871,7 @@ def blobtools_coverage(genome_assembly_file: str, pacbio_hifi_reads: str):
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 ########################## Purge duplicates ##########################
-def purge_dups_1_map_hifi_to_genome(gemone_assembly_file: str, hifi_sequence_file: str, output_directory: str, species_name: str, directory_addition: str = None, round_number: int = 1):
+def purge_dups_1_map_hifi_to_genome(gemoneAssemblyFile: str, hifiSequenceFile: str, outputDirectory: str, speciesName: str, environment: str, directoryAddition: str | None = None, roundNumber: int = 1):
 	"""
 	Template: Align PacBio HiFi sequence data to genome.
 	
@@ -758,54 +882,50 @@ def purge_dups_1_map_hifi_to_genome(gemone_assembly_file: str, hifi_sequence_fil
 	
 	:param
 	"""
-	if directory_addition:
-		directory_addition = '_' + directory_addition
+	if directoryAddition:
+		directoryAddition = '_' + directoryAddition
 	else:
-		directory_addition = ''
-	inputs = {'genome': gemone_assembly_file,
-		   	  'hifi': hifi_sequence_file}
-	outputs = {'paf': f'{output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.paf.gz',
-			   'stat': f'{output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/PB.stat',
-			   'cov': f'{output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/PB.base.cov'}
+		directoryAddition = ''
+	inputs = {'genome': gemoneAssemblyFile,
+		   	  'hifi': hifiSequenceFile}
+	outputs = {'paf': f'{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/{speciesAbbreviation(speciesName)}.paf.gz',
+			   'stat': f'{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/PB.stat',
+			   'cov': f'{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/PB.base.cov'}
 	options = {
 		'cores': 30,
 		'memory': '60g',
 		'walltime': '04:00:00'
 	}
 	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
-	
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
 	
-	[ -d {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments ] || mkdir -p {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments
+	[ -d {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments ] || mkdir -p {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments
 	
 	minimap2 \\
 		-x map-hifi \\
 		-t {options['cores']} \\
-		{gemone_assembly_file} \\
-		{hifi_sequence_file} \\
+		{gemoneAssemblyFile} \\
+		{hifiSequenceFile} \\
 	| gzip \\
 		-c \\
 		- \\
-		> {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.prog.paf.gz
+		> {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/{speciesAbbreviation(speciesName)}.prog.paf.gz
 	
 	pbcstat \\
-		-O {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/ \\
-		{output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.prog.paf.gz
+		-O {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/ \\
+		{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/{speciesAbbreviation(speciesName)}.prog.paf.gz
 	
-	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.prog.paf.gz {outputs['paf']}
+	mv {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/{speciesAbbreviation(speciesName)}.prog.paf.gz {outputs['paf']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-def purge_dups_2_map_to_self(genome_assembly_file: str, output_directory: str, species_name: str, directory_addition: str = None, round_number: int = 1):
+def purge_dups_2_map_to_self(genomeAssemblyFile: str, outputDirectory: str, speciesName: str, environment: str, directoryAddition: str | None = None, roundNumber: int = 1):
 	"""
 	Template: Splits assembly into equal pieces and maps it to itself.
 	
@@ -816,56 +936,52 @@ def purge_dups_2_map_to_self(genome_assembly_file: str, output_directory: str, s
 	
 	:param
 	"""
-	if directory_addition:
-		directory_addition = '_' + directory_addition
+	if directoryAddition:
+		directoryAddition = '_' + directoryAddition
 	else:
-		directory_addition = ''
-	inputs = {'genome': genome_assembly_file}
-	outputs = {'split': f'{output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.split.fasta',
-			   'paf': f'{output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.self.paf.gz'}
+		directoryAddition = ''
+	inputs = {'genome': genomeAssemblyFile}
+	outputs = {'split': f'{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/{speciesAbbreviation(speciesName)}.split.fasta',
+			   'paf': f'{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/{speciesAbbreviation(speciesName)}.self.paf.gz'}
 	options = {
 		'cores': 30,
 		'memory': '60g',
 		'walltime': '04:00:00'
 	}
 	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
-	
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
 	
-	[ -d {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments ] || mkdir -p {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments
+	[ -d {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments ] || mkdir -p {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments
 	
 	split_fa \\
-		{genome_assembly_file} \\
-		> {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.split.prog.fasta
+		{genomeAssemblyFile} \\
+		> {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/{speciesAbbreviation(speciesName)}.split.prog.fasta
 	
-	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.split.prog.fasta {outputs['split']}
+	mv {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/{speciesAbbreviation(speciesName)}.split.prog.fasta {outputs['split']}
 
 	minimap2 \\
 		-x asm5 \\
 		-t {options['cores']} \\
 		-D \\
 		-P \\
-		{outputs['split']} \\
-		{outputs['split']} \\
+		{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/{speciesAbbreviation(speciesName)}.split.fasta \\
+		{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/{speciesAbbreviation(speciesName)}.split.fasta \\
 	| gzip \\
 		-c \\
 		- \\
-		> {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.self.prog.paf.gz
+		> {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/{speciesAbbreviation(speciesName)}.self.prog.paf.gz
 	
-	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/alignments/{species_abbreviation(species_name)}.self.prog.paf.gz {outputs['paf']}
+	mv {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/alignments/{speciesAbbreviation(speciesName)}.self.prog.paf.gz {outputs['paf']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-def purge_dups_3_purge_duplicates(pb_stat_file: str, pb_base_cov_file: str, self_alignment_paf: str, genome_assembly_file: str, output_directory: str, species_name: str, directory_addition: str = None, round_number: int = 1):
+def purge_dups_3_purge_duplicates(pbStatFile: str, pbBaseCovFile: str, selfAlignmentPaf: str, genomeAssemblyFile: str, outputDirectory: str, speciesName: str, environment: str, directoryAddition: str | None = None, roundNumber: int = 1):
 	"""
 	Template: Purge haplotigs and opverlaps using :script:`purge_dups`.
 	
@@ -876,89 +992,94 @@ def purge_dups_3_purge_duplicates(pb_stat_file: str, pb_base_cov_file: str, self
 	
 	:param
 	"""
-	if directory_addition:
-		directory_addition = '_' + directory_addition
+	if directoryAddition:
+		directoryAddition = '_' + directoryAddition
 	else:
-		directory_addition = ''
-	inputs = {'stat': pb_stat_file,
-		   	  'cov': pb_base_cov_file,
-			  'self': self_alignment_paf,
-			  'genome': genome_assembly_file}
-	outputs = {'cutoffs': f'{output_directory}/purge_dups{directory_addition}/{round_number:02}/cutoffs',
-			   'dups': f'{output_directory}/purge_dups{directory_addition}/{round_number:02}/dups.bed',
-			   'purged': f'{output_directory}/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.purged.fa',
-			   'hap': f'{output_directory}/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.hap.fa'}
+		directoryAddition = ''
+	inputs = {'stat': pbStatFile,
+		   	  'cov': pbBaseCovFile,
+			  'self': selfAlignmentPaf,
+			  'genome': genomeAssemblyFile}
+	outputs = {'cutoffs': f'{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/cutoffs',
+			   'dups': f'{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/dups.bed',
+			   'purged': f'{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/{speciesAbbreviation(speciesName)}.purged.fa',
+			   'hap': f'{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/{speciesAbbreviation(speciesName)}.hap.fa'}
 	options = {
 		'cores': 2,
 		'memory': '20g',
 		'walltime': '04:00:00'
 	}
 	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
-	
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
 	
-	[ -d {output_directory}/purge_dups{directory_addition}/{round_number:02} ] || mkdir -p {output_directory}/purge_dups{directory_addition}/{round_number:02}
+	[ -d {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02} ] || mkdir -p {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}
 	
 	calcuts \\
-		{pb_stat_file} \\
-		> {output_directory}/purge_dups{directory_addition}/{round_number:02}/cutoffs.prog
+		{pbStatFile} \\
+		> {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/cutoffs.prog
 	
-	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/cutoffs.prog {outputs['cutoffs']}
+	mv {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/cutoffs.prog {outputs['cutoffs']}
 
 	purge_dups \\
 		-2 \\
-		-T {outputs['cutoffs']} \\
-		-c {pb_base_cov_file} \\
-		{self_alignment_paf} \\
-		> {output_directory}/purge_dups{directory_addition}/{round_number:02}/dups.prog.bed
+		-T {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/cutoffs \\
+		-c {pbBaseCovFile} \\
+		{selfAlignmentPaf} \\
+		> {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/dups.prog.bed
 
-	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/dups.prog.bed {outputs['dups']}
+	mv {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/dups.prog.bed {outputs['dups']}
 
 	get_seqs \\
-		-p {output_directory}/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog \\
-		{outputs['dups']} \\
-		{genome_assembly_file}
+		-p {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/{speciesAbbreviation(speciesName)}.prog \\
+		{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/dups.bed \\
+		{genomeAssemblyFile}
 
 	seqkit seq \\
 		-j {options['cores']} \\
 		-w 60 \\
-		-o {outputs['purged']} \\
-		{output_directory}/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog.purged.fa
+		-o {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/{speciesAbbreviation(speciesName)}.purged.fa \\
+		{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/{speciesAbbreviation(speciesName)}.prog.purged.fa
 
-	rm {output_directory}/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog.purged.fa
-	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/{species_abbreviation(species_name)}.prog.hap.fa {outputs['hap']}
+	rm {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/{speciesAbbreviation(speciesName)}.prog.purged.fa
+	mv {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/{speciesAbbreviation(speciesName)}.prog.hap.fa {outputs['hap']}
 	
 	awk \\
-		'BEGIN{{OFS="\\t"}}
-		{{if ($0 ~ /^>/)
-			{{if (sequence_length)
-				{{print sequence_name, sequence_length}}
-			total_length += sequence_length
-			sequence_name = $0
-			sequence_length = 0
-			sequence_number += 1
-			next
-			}}
-		sequence_length += length($0)
+		'BEGIN{{
+			OFS = "\\t"
 		}}
-		END{{if (sequence_length)
-			{{print sequence_name, sequence_length}}
-		print sequence_number"_sequences", total_length + sequence_length
+		{{
+			if ($0 ~ /^>/)
+			{{
+				if (sequence_length)
+				{{
+					print sequence_name, sequence_length
+				}}
+				total_length += sequence_length
+				sequence_name = $0
+				sequence_length = 0
+				sequence_number += 1
+				next
+			}}
+			sequence_length += length($0)
+		}}
+		END{{
+			if (sequence_length)
+			{{
+				print sequence_name, sequence_length
+			}}
+			print sequence_number"_sequences", total_length + sequence_length
 		}}' \\
-		{outputs['purged']} \\
-		> {output_directory}/purge_dups{directory_addition}/{round_number:02}/sequences.tsv
+		{outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/{speciesAbbreviation(speciesName)}.purged.fa \\
+		> {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/sequences.tsv
 
-	last_line=($(tail -n 1 {output_directory}/purge_dups{directory_addition}/{round_number:02}/sequences.tsv))
+	last_line=($(tail -n 1 {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/sequences.tsv))
 
-	mv {output_directory}/purge_dups{directory_addition}/{round_number:02}/sequences.tsv {output_directory}/purge_dups{directory_addition}/{round_number:02}/sequences_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
+	mv {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/sequences.tsv {outputDirectory}/purge_dups{directoryAddition}/{roundNumber:02}/sequences_"${{last_line[0]%_*}}"_"${{last_line[1]}}".tsv
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))

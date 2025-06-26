@@ -287,14 +287,47 @@ def braker1(genome_assembly_file: str, rna_alignment_bam: str, output_directory:
 	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
-		}} 
+		}}
 		{{
-			if ($3 == "gene") 
+			if (FNR == NR)
 			{{
-				print $1, $4-1, $5
+				order[$1] = NR; next
+		  	}}
+			if ($3 == "gene")
+			{{
+				print order[$1], $1, $4 - 1, $5
 			}}
 		}}' \\
+		<(awk \\
+			'BEGIN{{
+				RS = ">"
+				ORS = "\\n"
+				FS = "\\n"
+				OFS = "\\t"
+			}}
+			{{
+				if (FNR == 1)
+				{{
+					next
+				}}
+				split($1, namearray, " ")
+				chromname = namearray[1]
+				print chromname
+			}}' \\
+			{genome_assembly_file}) \\
 		{outputs['gtf']} \\
+	| sort \\
+		-k 1,1n \\
+		-k 3,3n \\
+		- \\
+	| awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			print $2, $3, $4
+		}}' \\
+		- \\
 		> {output_directory}/braker1/genes.prog.bed
 	
 	bedtools complement \\
@@ -393,16 +426,49 @@ def braker2(genome_assembly_file: str, protein_database_file: str, output_direct
 	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
-		}} 
+		}}
 		{{
-			if ($3 == "gene") 
+			if (FNR == NR)
 			{{
-				print $1, $4-1, $5
+				order[$1] = NR; next
+		  	}}
+			if ($3 == "gene")
+			{{
+				print order[$1], $1, $4 - 1, $5
 			}}
 		}}' \\
+		<(awk \\
+			'BEGIN{{
+				RS = ">"
+				ORS = "\\n"
+				FS = "\\n"
+				OFS = "\\t"
+			}}
+			{{
+				if (FNR == 1)
+				{{
+					next
+				}}
+				split($1, namearray, " ")
+				chromname = namearray[1]
+				print chromname
+			}}' \\
+			{genome_assembly_file}) \\
 		{outputs['gtf']} \\
+	| sort \\
+		-k 1,1n \\
+		-k 3,3n \\
+		- \\
+	| awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			print $2, $3, $4
+		}}' \\
+		- \\
 		> {output_directory}/braker2/genes.prog.bed
-	
+		
 	bedtools complement \\
 		-i {output_directory}/braker2/genes.prog.bed \\
 		-g <(awk \\
@@ -501,14 +567,47 @@ def braker3(genome_assembly_file: str, rna_alignment_bam: str, protein_database_
 	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
-		}} 
+		}}
 		{{
-			if ($3 == "gene") 
+			if (FNR == NR)
 			{{
-				print $1, $4-1, $5
+				order[$1] = NR; next
+		  	}}
+			if ($3 == "gene")
+			{{
+				print order[$1], $1, $4 - 1, $5
 			}}
 		}}' \\
+		<(awk \\
+			'BEGIN{{
+				RS = ">"
+				ORS = "\\n"
+				FS = "\\n"
+				OFS = "\\t"
+			}}
+			{{
+				if (FNR == 1)
+				{{
+					next
+				}}
+				split($1, namearray, " ")
+				chromname = namearray[1]
+				print chromname
+			}}' \\
+			{genome_assembly_file}) \\
 		{outputs['gtf']} \\
+	| sort \\
+		-k 1,1n \\
+		-k 3,3n \\
+		- \\
+	| awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			print $2, $3, $4
+		}}' \\
+		- \\
 		> {output_directory}/braker3/genes.prog.bed
 	
 	bedtools complement \\

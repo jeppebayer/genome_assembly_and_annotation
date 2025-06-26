@@ -1,0 +1,8 @@
+#environment	package	version
+btk	blast	2.16.0
+btk	blobtoolkit	4.4.5
+btk	busco	5.8.3
+btk	diamond	2.1.12
+btk	fasta_windows	0.2.4
+btk	minimap2	2.29
+btk	samtools	1.22

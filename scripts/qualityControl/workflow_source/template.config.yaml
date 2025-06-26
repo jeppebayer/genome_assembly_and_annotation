@@ -1,0 +1,19 @@
+# (str). The name of the relevant project account.
+account: 
+# (str). Conda environment for assembly (gwf, pyyaml, ).
+condaEnvironment01: 
+# (str). Name of species being analyzed
+speciesName: 
+# (str.) Taxonomic group. Can be left empty.
+taxonomicGroup: 
+# (str). Directory for intermediate files.
+workingDirectoryPath: 
+# (str). Directory for final output files. Can be left empty (If left empty, output file will be placed within 'working_directory_path').
+outputDirectoryPath: 
+# (str). Path to genome assembly file for quality control.
+genomeAssemblyFile: 
+# (list). List of path to PacBio HiFi sequencing files.
+pacbioHifiReads:
+  - 
+# (str). Name of BUSCO dataset.
+buscoDatasetName: 

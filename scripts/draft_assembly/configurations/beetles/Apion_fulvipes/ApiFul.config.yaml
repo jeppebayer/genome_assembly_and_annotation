@@ -5,25 +5,25 @@ condaEnvironment01: testAssembly
 # (str). Conda environment for quality control (gwf, pyyaml, busco).
 condaEnvironment02: evalAssemblyTest
 # (str). Name of species being analyzed
-speciesName: Tenuiphantes tenuis
+speciesName: Apion fulvipes
 # (str). Taxonomic group. Can be left empty.
-taxonomicGroup: Spiders
+taxonomicGroup: Beetles
 # (str). Directory for intermediate files.
 workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps
 # (str). Directory for final output files. Can be left empty (If left empty, output file will be placed within 'working_directory_path').
 outputDirectoryPath: 
 # (list). Path to PacBio HiFi sequence file. Used to create a primary assembly.
 pacbioHifiSequenceFiles:
-  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Tenuiphantes_tenuis/T_ten_m84108_240902_140849_s1.hifi_reads.bc2052.fastq.gz
-  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Tenuiphantes_tenuis/T_ten_m84108_241204_183609_s3.hifi_reads.bc2052.fq.gz
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Apion_fulvipes/A_ful_m84108_240904_180129_s3.hifi_reads.bc2050.fastq.gz
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Apion_fulvipes/ApiFul45A_m84108_230831_160317_s4.hifi_reads.bc1002.fastq.gz
 # (list). List of Hi-C sequence files if avalable (optional). Used to haplotype resolve assembly.
 hicSequenceFiles:
-  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Tenuiphantes_tenuis/Ten_Ten_L1_1.fq.gz
-  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Tenuiphantes_tenuis/Ten_Ten_L1_2.fq.gz
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Apion_fulvipes/API_FUL_L1_1.fq.gz
+  - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/hic/Apion_fulvipes/API_FUL_L1_2.fq.gz
 # (int). Use Hi-C data during assembly? (1 = Yes | 2 = No | 3 = Both).
 useHicData: 2
 # (str). Name of BUSCO lineage dataset to use for analysis.
-buscoDatasetName: arachnida_odb10
+buscoDatasetName: endopterygota_odb10
 # (int). Whether the HiFi data is from several individuals or a single individual. (0 = Single individual | 1 = Multiple individuals)
 # 0: hifiasm -l 1 -s 0.75, 1: hifiasm -l 3 -s 0.1
 poolSeqData: 1

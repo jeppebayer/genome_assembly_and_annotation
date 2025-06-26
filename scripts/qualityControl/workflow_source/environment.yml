@@ -1,0 +1,22 @@
+name: btk
+channels:
+  - conda-forge
+  - bioconda
+  - genomedk
+  - gwforg
+  - defaults
+dependencies:
+  - blast=2.16.0
+  - busco=5.8.3
+  - diamond=2.1.12
+  - fasta_windows=0.2.4
+  - gwf
+  - minimap2=2.29
+  - python=3.9
+  - pyyaml
+  - seqtk=1.5
+  - blobtk=0.6.5
+  - pip=25.1.1
+  - pip:
+    - blobtoolkit[full]=4.4.5
+prefix: /home/jepe/miniconda3/envs/btk

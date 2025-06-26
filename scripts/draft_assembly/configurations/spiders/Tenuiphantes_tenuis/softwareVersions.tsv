@@ -1,0 +1,9 @@
+#environment	package	version
+testAssembly	hifiasm	0.25.0
+testAssembly	minimap2	2.29
+testAssembly	purge_dups	1.2.6
+testAssembly	seqkit	2.10.0
+evalAssemblyTest	busco	5.8.3
+evalAssemblyTest	metaeuk	7.bba0d80
+evalAssemblyTest	minimap2	2.29
+evalAssemblyTest	miniprot	0.16
