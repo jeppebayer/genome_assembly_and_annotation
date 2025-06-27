@@ -36,6 +36,7 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 	NCBI_NT: str = DATABASES['ncbiNtPath']
 	
 	BASAL_LINEAGES = ['eukaryota_odb10', 'bacteria_odb10', 'archaea_odb10']
+	TAXON_ID = '707889'
 
 	softwareList = ['fasta_windows', 'busco', 'blobtoolkit', 'blast', 'diamond', 'minimap2', 'samtools']
 
@@ -51,6 +52,15 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 	topDir = f'{WORK_DIR}/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/assemblyQC/{os.path.basename(ASSEMBLY_FILE)}' if TAXONOMY else f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/assemblyQC/{os.path.basename(ASSEMBLY_FILE)}'
 	topOut = f'{OUTPUT_DIR}/assemblyQC/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/{os.path.basename(ASSEMBLY_FILE)}' if TAXONOMY else f'{OUTPUT_DIR}/assemblyQC/{SPECIES_NAME.replace(" ", "_")}/{os.path.basename(ASSEMBLY_FILE)}'
 	
+	genomeSize = gwf.target_from_template(
+		name=f'genome_size',
+		template=genome_size(
+			genomeAssemblyFile=ASSEMBLY_FILE,
+			outputDirectory=topDir,
+			environment=CONDA_ENV
+		)
+	)
+
 	fastaWindows = gwf.target_from_template(
 		name=f'fasta_windows',
 		template=fasta_windows(
@@ -70,6 +80,15 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 		)
 	)
 
+	samtoolsFlagstat = gwf.target_from_template(
+		name=f'samtools_flagstat',
+		template=samtools_flagstat(
+			alignmnetBamFile=blobtoolkitAlignment.outputs['alignment'],
+			outputDirectory=topDir,
+			environment=CONDA_ENV
+		)
+	)
+
 	blobtoolkitCoverage = gwf.target_from_template(
 		name=f'blobtoolkit_coverage',
 		template=blobtoolkit_coverage(
@@ -79,7 +98,7 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 		)
 	)
 
-	for lineage in BUSCO_LINEAGES + BASAL_LINEAGES:
+	for lineage in BUSCO_LINEAGES:
 		buscoGenome = gwf.target_from_template(
 			name=f'busco_genome_{lineage}',
 			template=busco_genome(
@@ -91,14 +110,27 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 			)
 		)
 
-	# blobtoolkitExtractBuscoGenes = gwf.target_from_template(
-	# 	name=f'extract_busco_genes',
-	# 	template=blobtoolkit_extract_busco_genes(
-	# 		buscoFullTableTsv=buscoGenome.outputs['fulltable'],
-	# 		outputPrefix=os.path.basename(os.path.splitext(os.path.splitext(ASSEMBLY_FILE)[0])[0]) if ASSEMBLY_FILE.endswith('.gz') else os.path.basename(os.path.splitext(ASSEMBLY_FILE)[0]),
-	# 		environment=CONDA_ENV
-	# 	)
-	# )
+	for lineage in BASAL_LINEAGES:
+		buscoGenome = gwf.target_from_template(
+			name=f'busco_genome_{lineage}',
+			template=busco_genome(
+				genomeAssemblyFile=ASSEMBLY_FILE,
+				buscoLineage=lineage,
+				buscoDownloadPath=BUSCO_PATH,
+				outputDirectory=topDir,
+				environment=CONDA_ENV
+			)
+		)
+
+		blobtoolkitExtractBuscoGenes = gwf.target_from_template(
+			name=f'extract_busco_genes_{lineage}',
+			template=blobtoolkit_extract_busco_genes(
+				buscoFullTableTsv=buscoGenome.outputs['fulltable'],
+				outputPrefix=f'{os.path.basename(os.path.splitext(os.path.splitext(ASSEMBLY_FILE)[0])[0]) if ASSEMBLY_FILE.endswith(".gz") else os.path.basename(os.path.splitext(ASSEMBLY_FILE)[0])}.{lineage}',
+				outputDirectory=topDir,
+				environment=CONDA_ENV
+			)
+		)
 
 	# diamondBlastp = gwf.target_from_template(
 	# 	name=f'diamond_blastp',

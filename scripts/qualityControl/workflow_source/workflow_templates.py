@@ -40,6 +40,85 @@ def software_versions_to_string(environmentDict: dict) -> str:
 
 ############################## Targets ##############################
 
+def genome_size(genomeAssemblyFile: str, outputDirectory: str, environment: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	filename = os.path.basename(os.path.splitext(os.path.splitext(genomeAssemblyFile)[0])[0]) if genomeAssemblyFile.endswith('.gz') else os.path.basename(os.path.splitext(genomeAssemblyFile)[0])
+	inputs = {'genome': genomeAssemblyFile}
+	outputs = {'stats': f'{outputDirectory}/genome_assembly/{filename}.summaryStats.tsv'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '00:30:00'
+	}
+	spec = f"""
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
+	
+	[ -d {outputDirectory}/genome_assembly ] || mkdir -p {outputDirectory}/genome_assembly
+	
+	ln \\
+		-s \\
+		-f \\
+		{genomeAssemblyFile} \\
+		{outputDirectory}/genome_assembly/{os.path.basename(genomeAssemblyFile)}
+
+	awk \\
+		-v byteSize="$( \\
+			wc \\
+				--bytes \\
+				< {genomeAssemblyFile})" \\
+		-v filename={genomeAssemblyFile} \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			array["assemblyFile"] = filename
+			if ((byteSize / 1000000) % int(byteSize / 1000000) >= 0.5)
+			{{
+				array["fileSize(MB)"] = int(byteSize / 1000000) + 1
+			}}
+			else
+			{{
+				array["fileSize(MB)"] = int(byteSize / 1000000)
+			}}
+			if (($2 / 1000000) % int($2 / 1000000) >= 0.5)
+			{{
+				array["genomeSize(Mb)"] = int($2 / 1000000) + 1
+			}}
+			else
+			{{
+				array["genomeSize(Mb)"] = int($2 / 1000000)
+			}}
+			array["nScaffolds"] = $1
+		}}
+		END{{
+			for (i in array)
+			{{
+				print i, array[i]
+			}}
+		}}' \\
+		<(seqtk size \\
+			{genomeAssemblyFile}) \\
+		> {outputDirectory}/genome_assembly/{filename}.summaryStats.prog.tsv
+	
+	mv {outputDirectory}/genome_assembly/{filename}.summaryStats.prog.tsv {outputs['stats']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
+
 def fasta_windows(genomeAssemblyFile: str, outputDirectory: str, environment: str):
 	"""
 	Template: template_description
@@ -160,6 +239,46 @@ def blobtoolkit_alignment(genomeAssemblyFile: str, pacbioHifiReads: list, output
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
+def samtools_flagstat(alignmnetBamFile: str, outputDirectory: str, environment: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	filename = os.path.basename(os.path.splitext(os.path.splitext(alignmnetBamFile)[0])[0]) if alignmnetBamFile.endswith('.gz') else os.path.basename(os.path.splitext(alignmnetBamFile)[0])
+	inputs = {'bam': alignmnetBamFile}
+	outputs = {'flagstat': f'{outputDirectory}/alignment/{filename}.flagstat.tsv'}
+	options = {
+		'cores': 20,
+		'memory': '20g',
+		'walltime': '02:00:00'
+	}
+	spec = f"""
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
+	
+	[ -d {outputDirectory}/alignment ] || mkdir -p {outputDirectory}/alignment
+	
+	samtools flagstat \\
+		--threads {options['cores'] - 1} \\
+		--output-fmt tsv \\
+		{alignmnetBamFile} \\
+		> {outputDirectory}/alignment/{filename}.flagstat.prog.tsv
+	
+	mv {outputDirectory}/alignment/{filename}.flagstat.prog.tsv {outputs['flagstat']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
+
 def blobtoolkit_coverage(hifiToAssemblyBam: str, outputDirectory: str, environment: str):
 	"""
 	Template: template_description
@@ -211,9 +330,9 @@ def busco_genome(genomeAssemblyFile: str, buscoLineage: str, buscoDownloadPath: 
 	:param
 	"""
 	inputs = {'genome': genomeAssemblyFile}
-	outputs = {'stattxt': f'{outputDirectory}/busco_{buscoLineage}/run_{buscoLineage}/short_summary.txt',
-			   'statjson': f'{outputDirectory}/busco_{buscoLineage}/run_{buscoLineage}/short_summary.json',
-			   'fulltable': f'{outputDirectory}/busco_{buscoLineage}/run_{buscoLineage}/full_table.tsv'}
+	outputs = {'stattxt': f'{outputDirectory}/busco/{buscoLineage}/run_{buscoLineage}/short_summary.txt',
+			   'statjson': f'{outputDirectory}/busco/{buscoLineage}/run_{buscoLineage}/short_summary.json',
+			   'fulltable': f'{outputDirectory}/busco/{buscoLineage}/run_{buscoLineage}/full_table.tsv'}
 	protect = [outputs['stattxt'], outputs['statjson']]
 	options = {
 		'cores': 30,
@@ -226,7 +345,7 @@ def busco_genome(genomeAssemblyFile: str, buscoLineage: str, buscoDownloadPath: 
 	echo "Conda Environment Info:"
 	conda env export --from-history
 	
-	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	[ -d {outputDirectory}/busco ] || mkdir -p {outputDirectory}/busco
 
 	cd {outputDirectory}
 
@@ -236,7 +355,7 @@ def busco_genome(genomeAssemblyFile: str, buscoLineage: str, buscoDownloadPath: 
 		--metaeuk \\
 		--in {genomeAssemblyFile} \\
 		--mode genome \\
-		--out busco_{buscoLineage} \\
+		--out {buscoLineage} \\
 		--out_path {outputDirectory} \\
 		--download_path {buscoDownloadPath} \\
 		--lineage_dataset {buscoDownloadPath}/lineages/{buscoLineage} \\
@@ -247,7 +366,7 @@ def busco_genome(genomeAssemblyFile: str, buscoLineage: str, buscoDownloadPath: 
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec, executor=Conda(environment))
 
-def blobtoolkit_extract_busco_genes(buscoFullTableTsv: str, outputPrefix: str, environment: str):
+def blobtoolkit_extract_busco_genes(buscoFullTableTsv: str, outputPrefix: str, outputDirectory: str, environment: str):
 	"""
 	Template: template_description
 	
@@ -259,7 +378,7 @@ def blobtoolkit_extract_busco_genes(buscoFullTableTsv: str, outputPrefix: str, e
 	:param
 	"""
 	inputs = {'tsv': buscoFullTableTsv}
-	outputs = {'fasta': f'{os.path.dirname(os.path.dirname(buscoFullTableTsv))}/{outputPrefix}.buscoGenes.fasta'}
+	outputs = {'fasta': f'{outputDirectory}/busco_genes/{outputPrefix}_buscoGenes.fasta'}
 	options = {
 		'cores': 1,
 		'memory': '10g',
@@ -271,18 +390,20 @@ def blobtoolkit_extract_busco_genes(buscoFullTableTsv: str, outputPrefix: str, e
 	echo "Conda Environment Info:"
 	conda env export --from-history
 	
+	[ -d {outputDirectory}/busco_genes ] || mkdir -p {outputDirectory}/busco_genes
+
 	btk pipeline extract-busco-genes \\
 		--busco {os.path.dirname(buscoFullTableTsv)}/busco_sequences \\
-		--out {os.path.dirname(os.path.dirname(buscoFullTableTsv))}/{outputPrefix}.buscoGenes.prog.fasta
+		--out {os.path.dirname(os.path.dirname(buscoFullTableTsv))}/{outputPrefix}_buscoGenes.prog.fasta
 
-	mv {os.path.dirname(os.path.dirname(buscoFullTableTsv))}/{outputPrefix}.buscoGenes.prog.fasta {outputs['fasta']}
+	mv {outputDirectory}/busco_genes/{outputPrefix}_buscoGenes.prog.fasta {outputs['fasta']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-def diamond_blastp(queryFileFasta: str, outputDirectory: str, environment: str, diamondDatabaseFile: str = "/faststorage/project/EcoGenetics/databases/UniProt/reference_proteomes.dmnd"):
+def diamond_blastp(queryFileFasta: str, outputDirectory: str, environment: str, diamondDatabaseFile: str):
 	"""
 	Template: template_description
 	
@@ -309,6 +430,8 @@ def diamond_blastp(queryFileFasta: str, outputDirectory: str, environment: str, 
 	
 	[ -d {outputDirectory}/diamond/blastp ] || mkdir -p {outputDirectory}/diamond/blastp
 	
+	cd {outputDirectory}/diamond/blastp
+
 	diamond blastp \\
 		--threads {options['cores']} \\
 		--db {diamondDatabaseFile} \\
@@ -326,7 +449,7 @@ def diamond_blastp(queryFileFasta: str, outputDirectory: str, environment: str, 
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-def diamond_blastx(queryFileFasta: str, buscoTableFull: str, outputDirectory: str, environment: str, diamondDatabaseFile: str = "/faststorage/project/EcoGenetics/databases/UniProt/reference_proteomes.dmnd"):
+def diamond_blastx(queryFileFasta: str, buscoTableFull: str, outputDirectory: str, environment: str, diamondDatabaseFile: str):
 	"""
 	Template: template_description
 	
