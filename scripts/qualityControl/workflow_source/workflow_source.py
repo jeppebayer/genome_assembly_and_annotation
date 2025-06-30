@@ -4,6 +4,11 @@ from gwf.workflow import collect
 from gwf.executors import Conda
 import os, yaml, glob, sys
 from workflow_templates import *
+import importlib.util
+
+spec = importlib.util.spec_from_file_location('info', f'{os.path.dirname(os.path.realpath(__file__))}/software/taxon_info/taxonInfo.py')
+info = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(info)
 
 def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml')[0]):
 	"""
@@ -30,13 +35,12 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 	SEQUENCING_FILES: list = SAMPLE_SETUP['sequencingFiles']
 	DATABASES: dict = CONFIG['databases']
 	BUSCO_PATH: str = DATABASES['busco']['path']
-	BUSCO_LINEAGES: list = DATABASES['busco']['lineages']
+	REQUESTED_BUSCO_LINEAGES: str = ','.join(DATABASES['busco']['requestedLineages']) if DATABASES['busco']['requestedLineages'][0] else ''
 	UNIPROT: str = DATABASES['uniprotPath']
 	NCBI_TAXDUMP: str = DATABASES['ncbiTaxdumpPath']
 	NCBI_NT: str = DATABASES['ncbiNtPath']
 	
-	BASAL_LINEAGES = ['eukaryota_odb10', 'bacteria_odb10', 'archaea_odb10']
-	TAXON_ID = '707889'
+	BASAL_LINEAGES = ['eukaryota_odb12', 'bacteria_odb12', 'archaea_odb12']
 
 	softwareList = ['fasta_windows', 'busco', 'blobtoolkit', 'blast', 'diamond', 'minimap2', 'samtools']
 
@@ -44,6 +48,25 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 	#                  Workflow
 	# --------------------------------------------------
 	
+	if not os.path.exists(f'./{speciesAbbreviation(SPECIES_NAME)}.info.yml'):
+		print(f'Creating {speciesAbbreviation(SPECIES_NAME)}.info.yml...')
+		taxonInfo = info.get_taxon_info(SPECIES_NAME, NCBI_TAXDUMP)
+		classification = info.get_classification(taxonInfo)
+		odbList = info.get_odb_list(taxonInfo, REQUESTED_BUSCO_LINEAGES)
+		assemblyInfo = info.get_assembly_info(ASSEMBLY_FILE)
+		info.print_yaml(speciesAbbreviation(SPECIES_NAME), taxonInfo, assemblyInfo, classification, odbList)
+		print('File has been created... Running workflow...')
+
+	INFO = yaml.safe_load(open(f'./{speciesAbbreviation(SPECIES_NAME)}.info.yml'))
+	BUSCO_LINEAGES = INFO['buscoLineages']
+
+	orderedLineages = {index: lineage for index, lineage in enumerate(BUSCO_LINEAGES)}
+	lastIndex = max(list(orderedLineages.keys()))
+	for basal_lineage in BASAL_LINEAGES:
+		if basal_lineage not in BUSCO_LINEAGES:
+			lastIndex += 1
+			orderedLineages[lastIndex] = basal_lineage
+
 	gwf = Workflow(
 		defaults={'account': ACCOUNT},
         executor=Conda(CONDA_ENV)
@@ -51,15 +74,15 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 	
 	topDir = f'{WORK_DIR}/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/assemblyQC/{os.path.basename(ASSEMBLY_FILE)}' if TAXONOMY else f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/assemblyQC/{os.path.basename(ASSEMBLY_FILE)}'
 	topOut = f'{OUTPUT_DIR}/assemblyQC/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/{os.path.basename(ASSEMBLY_FILE)}' if TAXONOMY else f'{OUTPUT_DIR}/assemblyQC/{SPECIES_NAME.replace(" ", "_")}/{os.path.basename(ASSEMBLY_FILE)}'
-	
-	genomeSize = gwf.target_from_template(
-		name=f'genome_size',
-		template=genome_size(
-			genomeAssemblyFile=ASSEMBLY_FILE,
-			outputDirectory=topDir,
-			environment=CONDA_ENV
-		)
-	)
+
+	# genomeSize = gwf.target_from_template(
+		# name=f'genome_size',
+		# template=genome_size(
+			# genomeAssemblyFile=ASSEMBLY_FILE,
+			# outputDirectory=topDir,
+			# environment=CONDA_ENV
+		# )
+	# )
 
 	fastaWindows = gwf.target_from_template(
 		name=f'fasta_windows',
@@ -98,7 +121,7 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 		)
 	)
 
-	for lineage in BUSCO_LINEAGES:
+	for lineage in orderedLineages.values():
 		buscoGenome = gwf.target_from_template(
 			name=f'busco_genome_{lineage}',
 			template=busco_genome(
@@ -110,27 +133,16 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 			)
 		)
 
-	for lineage in BASAL_LINEAGES:
-		buscoGenome = gwf.target_from_template(
-			name=f'busco_genome_{lineage}',
-			template=busco_genome(
-				genomeAssemblyFile=ASSEMBLY_FILE,
-				buscoLineage=lineage,
-				buscoDownloadPath=BUSCO_PATH,
-				outputDirectory=topDir,
-				environment=CONDA_ENV
+		if lineage in BASAL_LINEAGES:
+			blobtoolkitExtractBuscoGenes = gwf.target_from_template(
+				name=f'extract_busco_genes_{lineage}',
+				template=blobtoolkit_extract_busco_genes(
+					buscoFullTableTsv=buscoGenome.outputs['fulltable'],
+					outputPrefix=f'{os.path.basename(os.path.splitext(os.path.splitext(ASSEMBLY_FILE)[0])[0]) if ASSEMBLY_FILE.endswith(".gz") else os.path.basename(os.path.splitext(ASSEMBLY_FILE)[0])}.{lineage}',
+					outputDirectory=topDir,
+					environment=CONDA_ENV
+				)
 			)
-		)
-
-		blobtoolkitExtractBuscoGenes = gwf.target_from_template(
-			name=f'extract_busco_genes_{lineage}',
-			template=blobtoolkit_extract_busco_genes(
-				buscoFullTableTsv=buscoGenome.outputs['fulltable'],
-				outputPrefix=f'{os.path.basename(os.path.splitext(os.path.splitext(ASSEMBLY_FILE)[0])[0]) if ASSEMBLY_FILE.endswith(".gz") else os.path.basename(os.path.splitext(ASSEMBLY_FILE)[0])}.{lineage}',
-				outputDirectory=topDir,
-				environment=CONDA_ENV
-			)
-		)
 
 	# diamondBlastp = gwf.target_from_template(
 	# 	name=f'diamond_blastp',

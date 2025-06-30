@@ -21,9 +21,9 @@ sampleSetup:
 databases:
   busco:
     path: /faststorage/project/EcoGenetics/databases/BUSCO_062025
-    # (list). Names of BUSCO datasets.
-    lineages:
-      - arthropoda_odb10
+    # (list). Names of specific requested BUSCO datasets.
+    requestedLineages:
+      -
   uniprotPath: /faststorage/project/EcoGenetics/databases/UniProt_062025/reference_proteomes.dmnd
   ncbiTaxdumpPath: /faststorage/project/EcoGenetics/databases/NCBI_Taxdump_062025
   ncbiNtPath: /faststorage/project/EcoGenetics/databases/NCBI_nt_062025

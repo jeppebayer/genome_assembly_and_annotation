@@ -119,6 +119,46 @@ def genome_size(genomeAssemblyFile: str, outputDirectory: str, environment: str)
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
+def taxon_info(querySpecies: str, taxdumpPath: str, requestedBuscos: str, assemblyFile: str, outputDirectory: str, environment: str, taxonInfo: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/taxon_info/taxonInfo.py'):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'assembly': assemblyFile}
+	outputs = {'info': f'{outputDirectory}/{speciesAbbreviation(querySpecies)}.info.yml'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '00:30:00'
+	}
+	spec = f"""
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	python {taxonInfo} \\
+		'{querySpecies}' \\
+		{taxdumpPath} \\
+		{requestedBuscos} \\
+		{assemblyFile} \\
+		{outputDirectory}/{speciesAbbreviation(querySpecies)}.prog
+	
+	mv {outputDirectory}/{speciesAbbreviation(querySpecies)}.prog.info.yml {outputs['info']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
+
 def fasta_windows(genomeAssemblyFile: str, outputDirectory: str, environment: str):
 	"""
 	Template: template_description
@@ -347,7 +387,7 @@ def busco_genome(genomeAssemblyFile: str, buscoLineage: str, buscoDownloadPath: 
 	
 	[ -d {outputDirectory}/busco ] || mkdir -p {outputDirectory}/busco
 
-	cd {outputDirectory}
+	cd {outputDirectory}/busco
 
 	busco \\
 		--cpu {options['cores']} \\
@@ -356,7 +396,7 @@ def busco_genome(genomeAssemblyFile: str, buscoLineage: str, buscoDownloadPath: 
 		--in {genomeAssemblyFile} \\
 		--mode genome \\
 		--out {buscoLineage} \\
-		--out_path {outputDirectory} \\
+		--out_path {outputDirectory}/busco \\
 		--download_path {buscoDownloadPath} \\
 		--lineage_dataset {buscoDownloadPath}/lineages/{buscoLineage} \\
 		--offline
@@ -394,7 +434,7 @@ def blobtoolkit_extract_busco_genes(buscoFullTableTsv: str, outputPrefix: str, o
 
 	btk pipeline extract-busco-genes \\
 		--busco {os.path.dirname(buscoFullTableTsv)}/busco_sequences \\
-		--out {os.path.dirname(os.path.dirname(buscoFullTableTsv))}/{outputPrefix}_buscoGenes.prog.fasta
+		--out {outputDirectory}/busco_genes/{outputPrefix}_buscoGenes.prog.fasta
 
 	mv {outputDirectory}/busco_genes/{outputPrefix}_buscoGenes.prog.fasta {outputs['fasta']}
 	

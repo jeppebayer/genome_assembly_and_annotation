@@ -1,0 +1,20 @@
+assembly:
+  assemblyFile: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Lepidocyrtus_lignorum/draft_assembly/purge_dups_primary/02/LepLig.purged.fa
+  fileSize(MB): 735
+  genomeSize(Mb): 723
+  nScaffolds: 2143
+buscoLineages:
+- hexapoda_odb12
+- arthropoda_odb12
+- metazoa_odb12
+- eukaryota_odb12
+taxonomy:
+  class: Collembola
+  domain: Eukaryota
+  family: Entomobryidae
+  genus: Lepidocyrtus
+  kingdom: Metazoa
+  name: Lepidocyrtus lignorum
+  order: Entomobryomorpha
+  phylum: Arthropoda
+  taxid: '707889'
