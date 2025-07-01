@@ -35,7 +35,7 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 	SEQUENCING_FILES: list = SAMPLE_SETUP['sequencingFiles']
 	DATABASES: dict = CONFIG['databases']
 	BUSCO_PATH: str = DATABASES['busco']['path']
-	REQUESTED_BUSCO_LINEAGES: str = ','.join(DATABASES['busco']['requestedLineages']) if DATABASES['busco']['requestedLineages'][0] else ''
+	REQUESTED_BUSCO_LINEAGES: str | None = ','.join(DATABASES['busco']['requestedLineages']) if DATABASES['busco']['requestedLineages'][0] else None
 	UNIPROT: str = DATABASES['uniprotPath']
 	NCBI_TAXDUMP: str = DATABASES['ncbiTaxdumpPath']
 	NCBI_NT: str = DATABASES['ncbiNtPath']
@@ -47,7 +47,7 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 	# --------------------------------------------------
 	#                  Workflow
 	# --------------------------------------------------
-	
+
 	if not os.path.exists(f'./{speciesAbbreviation(SPECIES_NAME)}.info.yml'):
 		print(f'Creating {speciesAbbreviation(SPECIES_NAME)}.info.yml...')
 		taxonInfo = info.get_taxon_info(SPECIES_NAME, NCBI_TAXDUMP)
@@ -59,13 +59,14 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 
 	INFO = yaml.safe_load(open(f'./{speciesAbbreviation(SPECIES_NAME)}.info.yml'))
 	BUSCO_LINEAGES = INFO['buscoLineages']
+	TAX_ID = INFO['taxonomy']['taxid']
 
-	orderedLineages = {index: lineage for index, lineage in enumerate(BUSCO_LINEAGES)}
+	orderedLineages = {index: {'odb': lineage, 'fullTable': str} for index, lineage in enumerate(BUSCO_LINEAGES)}
 	lastIndex = max(list(orderedLineages.keys()))
 	for basal_lineage in BASAL_LINEAGES:
 		if basal_lineage not in BUSCO_LINEAGES:
 			lastIndex += 1
-			orderedLineages[lastIndex] = basal_lineage
+			orderedLineages[lastIndex] = {'odb': basal_lineage, 'fullTable': str}
 
 	gwf = Workflow(
 		defaults={'account': ACCOUNT},
@@ -121,7 +122,7 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 		)
 	)
 
-	for lineage in orderedLineages.values():
+	for index, lineage in enumerate([rank['odb'] for rank in orderedLineages.values()]):
 		buscoGenome = gwf.target_from_template(
 			name=f'busco_genome_{lineage}',
 			template=busco_genome(
@@ -132,6 +133,8 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 				environment=CONDA_ENV
 			)
 		)
+
+		orderedLineages[index]['fullTable'] = buscoGenome.outputs['fulltable']
 
 		if lineage in BASAL_LINEAGES:
 			blobtoolkitExtractBuscoGenes = gwf.target_from_template(
@@ -144,24 +147,85 @@ def assembly_quality_control_workflow(configFile: str = glob.glob('*config.y*ml'
 				)
 			)
 
-	# diamondBlastp = gwf.target_from_template(
-	# 	name=f'diamond_blastp',
-	# 	template=diamond_blastp(
-	# 		queryFileFasta=blobtoolkitExtractBuscoGenes.outputs['fasta'],
-	# 		outputDirectory=topDir,
-	# 		environment=CONDA_ENV
-	# 	)
-	# )
+			diamondBlastp = gwf.target_from_template(
+				name=f'diamond_blastp_{lineage}',
+				template=diamond_blastp(
+					queryFileFasta=blobtoolkitExtractBuscoGenes.outputs['fasta'],
+					excludeTaxon=TAX_ID,
+					outputDirectory=topDir,
+					environment=CONDA_ENV,
+					diamondDatabaseFile=UNIPROT
+				)
+			)
 
-	# diamondBlastx = gwf.target_from_template(
-	# 	name=f'diamond_blastx',
-	# 	template=diamond_blastx(
-	# 		queryFileFasta=ASSEMBLY_FILE,
-	# 		buscoTableFull=buscoGenome.outputs['fulltable'],
-	# 		outputDirectory=topDir,
-	# 		environment=CONDA_ENV
-	# 	)
-	# )
+	blobtoolkitCountBuscoGenes = gwf.target_from_template(
+		name=f'count_busco_genes',
+		template=blobtoolkit_count_busco_genes(
+			buscoTablesFull=[rank['fullTable'] for rank in orderedLineages.values()],
+			filename=os.path.basename(os.path.splitext(os.path.splitext(ASSEMBLY_FILE)[0])[0]) if ASSEMBLY_FILE.endswith('.gz') else os.path.basename(os.path.splitext(ASSEMBLY_FILE)[0]),
+			windowsBedFile=fastaWindows.outputs['bed'],
+			outputDirectory=topDir,
+			environment=CONDA_ENV
+		)
+	)
+
+	blobtoolkitCollateStats = gwf.target_from_template(
+		name=f'collate_stats',
+		template=blobtoolkit_collate_stats(
+			countBuscoGenesFile=blobtoolkitCountBuscoGenes.outputs['count'],
+			windowFreqFile=fastaWindows.outputs['freq'],
+			windowMononucFile=fastaWindows.outputs['mono'],
+			regionsCoverageFile=blobtoolkitCoverage.outputs['bed'],
+			filename=os.path.basename(os.path.splitext(os.path.splitext(ASSEMBLY_FILE)[0])[0]) if ASSEMBLY_FILE.endswith('.gz') else os.path.basename(os.path.splitext(ASSEMBLY_FILE)[0]),
+			outputDirectory=topDir,
+			environment=CONDA_ENV
+		)
+	)
+
+	diamondBlastx = gwf.target_from_template(
+		name=f'diamond_blastx',
+		template=diamond_blastx(
+			queryFileFasta=ASSEMBLY_FILE,
+			buscoTableFull=orderedLineages[0]['fullTable'],
+			buscoLineage=orderedLineages[0]["odb"],
+			excludeTaxon=TAX_ID,
+			outputDirectory=topDir,
+			environment=CONDA_ENV,
+			diamondDatabaseFile=UNIPROT
+		)
+	)
+
+	diamondBlastxNoHits = gwf.target_from_template(
+		name=f'diamond_blastx_no_hits',
+		template=diamond_blastx_no_hits(
+			queryFileFasta=ASSEMBLY_FILE,
+			blastxResults=diamondBlastx.outputs['blast'],
+			outputDirectory=topDir,
+			environment=CONDA_ENV
+		)
+	)
+
+	NcbiBlastnWithoutTaxon = gwf.target_from_template(
+		name=f'ncbi_blastn_without_taxon_{TAX_ID}',
+		template=ncbi_blastn(
+			queryFileFasta=ASSEMBLY_FILE,
+			outputDirectory=topDir,
+			excludeTaxon=TAX_ID,
+			environment=CONDA_ENV,
+			ncbiBlastDatabase=NCBI_NT
+		)
+	)
+
+	ncbiBlastnWithTaxon = gwf.target_from_template(
+		name=f'ncbi_blastn_with_taxon_{TAX_ID}',
+		template=ncbi_blastn(
+			queryFileFasta=ASSEMBLY_FILE,
+			outputDirectory=topDir,
+			excludeTaxon='',
+			environment=CONDA_ENV,
+			ncbiBlastDatabase=NCBI_NT
+		)
+	)
 	
 	with open(f'softwareVersions.tsv', 'w') as outfile:
 		outfile.write(software_versions_to_string(software_versions([CONDA_ENV], softwareList)))

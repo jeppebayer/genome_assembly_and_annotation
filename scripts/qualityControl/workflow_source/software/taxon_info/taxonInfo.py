@@ -1,16 +1,5 @@
 #!/bin/env python3
-import sys, os, yaml, gzip
-
-usage = f"""
-Usage: {sys.argv[0]} <querySpecies> <taxdumpPath> <requestedbuscos> <assemblyFile> <prefix>
-
-Input:
-	querySpecies	str			Scientific name of species.
-	taxdumpPath	str			Path to NCBI Taxdump directory.
-	requestedBuscos	str			Comma-separated list of BUSCO datasets.
-	assemblyFile	str			Genome assembly file.
-	prefix		str			Output prefix.
-"""
+import sys, os, yaml, gzip, argparse
 
 RANKS = [
     "genus",
@@ -21,6 +10,24 @@ RANKS = [
     "kingdom",
     "domain",
 ]
+
+def parse_args(args = None):
+	description = 'Combine files to create input file for blobtoolkit window-stats.'
+
+	parser = argparse.ArgumentParser(description=description)
+	parser.add_argument('--query', help='Scientific name of query species', required=True)
+	parser.add_argument('--taxdump', help='Path to NCBI Taxdump directory', required=True)
+	parser.add_argument('--busco', help='Comma-separated list of requested BUSCO lineages', default=None)
+	parser.add_argument('--assembly', help='Genome assembly file', required=True)
+	parser.add_argument('--prefix', help='Output prefix', required=True)
+	args = parser.parse_args(args)
+	if not os.path.exists(args.taxdump):
+		print('TAXDUMP must be an existing directory', file=sys.stderr)
+		sys.exit(1)
+	if not os.path.exists(args.assembly):
+		print('ASSEMBLY must be an existing file', file=sys.stderr)
+		sys.exit(1)
+	return args
 
 def get_taxon_info(querySpecies: str, taxdumpPath: str) -> dict: 
 	nodes = taxdumpPath + '/' + 'nodes.dmp'
@@ -67,10 +74,10 @@ def get_classification(taxonInfo: dict) -> dict:
 	return classification
 
 def get_odb_list(taxonInfo: dict,
-			requestedBuscos: str,
-			odbMapping: dict = {'odb10': f'{os.path.dirname(os.path.realpath(__file__))}/mapping_taxids-busco_dataset_name.odb10.2019-12-16.txt',
-					   			'odb12': f'{os.path.dirname(os.path.realpath(__file__))}/mapping_taxids-busco_dataset_name.odb12.2025-01-15.txt'}
-			) -> list:
+				 requestedBuscos: str,
+				 odbMapping: dict = {'odb10': f'{os.path.dirname(os.path.realpath(__file__))}/mapping_taxids-busco_dataset_name.odb10.2019-12-16.txt',
+					   				 'odb12': f'{os.path.dirname(os.path.realpath(__file__))}/mapping_taxids-busco_dataset_name.odb12.2025-01-15.txt'}
+				) -> list:
 	odbDict = {}
 	for odb in odbMapping:
 		with open(odbMapping[odb], 'r') as infile:
@@ -120,24 +127,13 @@ def print_yaml(prefix: str, taxonInfo: dict, assemblyInfo: dict, classification:
 	with open(f'{prefix}.info.yml', 'w') as outfile:
 		yaml.dump(data, outfile)
 
-if __name__ == '__main__':
-	if len(sys.argv) < 6:
-		print(usage)
-		sys.exit(1)
-	querySpecies = sys.argv[1]
-	taxdumpPath = sys.argv[2]
-	requestedBuscos = sys.argv[3]
-	assemblyFile = sys.argv[4]
-	prefix = sys.argv[5]
-	if not os.path.exists(taxdumpPath):
-		print('<taxdumpPath> must be an existing directory', file=sys.stderr)
-		sys.exit(1)
-	if not os.path.exists(assemblyFile):
-		print('<assemblyFile> must be an existing file', file=sys.stderr)
-		sys.exit(1)
-	taxonInfo = get_taxon_info(querySpecies, taxdumpPath)
+def main(args = None):
+	args = parse_args(args)
+	taxonInfo = get_taxon_info(args.query, args.taxdump)
 	classification = get_classification(taxonInfo)
-	odbList = get_odb_list(taxonInfo, requestedBuscos)
-	assemblyInfo = get_assembly_info(assemblyFile)
-	print_yaml(prefix, taxonInfo, assemblyInfo, classification, odbList)
-	sys.exit(0)
+	odbList = get_odb_list(taxonInfo, args.busco)
+	assemblyInfo = get_assembly_info(args.assembly)
+	print_yaml(args.prefix, taxonInfo, assemblyInfo, classification, odbList)
+
+if __name__ == '__main__':
+	sys.exit(main())

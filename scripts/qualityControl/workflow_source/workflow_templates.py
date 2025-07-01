@@ -443,7 +443,7 @@ def blobtoolkit_extract_busco_genes(buscoFullTableTsv: str, outputPrefix: str, o
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-def diamond_blastp(queryFileFasta: str, outputDirectory: str, environment: str, diamondDatabaseFile: str):
+def diamond_blastp(queryFileFasta: str, excludeTaxon: str, outputDirectory: str, environment: str, diamondDatabaseFile: str):
 	"""
 	Template: template_description
 	
@@ -477,8 +477,9 @@ def diamond_blastp(queryFileFasta: str, outputDirectory: str, environment: str, 
 		--db {diamondDatabaseFile} \\
 		--outfmt 6 qseqid staxids bitscore qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore \\
 		--evalue 1.0e-25 \\
-		--max-target-seq 10 \\
+		--max-target-seqs 10 \\
 		--max-hsps 1 \\
+		--taxon-exclude {excludeTaxon} \\
 		--query {queryFileFasta} \\
 		--out {outputDirectory}/diamond/blastp/{filename}.diamondBlastp.prog.txt
 	
@@ -489,7 +490,7 @@ def diamond_blastp(queryFileFasta: str, outputDirectory: str, environment: str, 
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-def diamond_blastx(queryFileFasta: str, buscoTableFull: str, outputDirectory: str, environment: str, diamondDatabaseFile: str):
+def diamond_blastx(queryFileFasta: str, buscoTableFull: str, buscoLineage: str, excludeTaxon: str, outputDirectory: str, environment: str, diamondDatabaseFile: str):
 	"""
 	Template: template_description
 	
@@ -503,7 +504,7 @@ def diamond_blastx(queryFileFasta: str, buscoTableFull: str, outputDirectory: st
 	filename = os.path.basename(os.path.splitext(os.path.splitext(queryFileFasta)[0])[0]) if queryFileFasta.endswith('.gz') else os.path.basename(os.path.splitext(queryFileFasta)[0])
 	inputs = {'query': queryFileFasta,
 		   	  'busco': buscoTableFull}
-	outputs = {'blast': f'{outputDirectory}/diamond/blastx/{filename}.diamondBlastx.txt'}
+	outputs = {'blast': f'{outputDirectory}/diamond/blastx/{filename}.{buscoLineage}.diamondBlastx.txt'}
 	options = {
 		'cores': 30,
 		'memory': '20g',
@@ -517,6 +518,8 @@ def diamond_blastx(queryFileFasta: str, buscoTableFull: str, outputDirectory: st
 	
 	[ -d {outputDirectory}/diamond/blastx ] || mkdir -p {outputDirectory}/diamond/blastx
 	
+	cd {outputDirectory}/diamond/blastx
+	
 	btk pipeline chunk-fasta \\
 		--chunk 100000 \\
 		--overlap 0 \\
@@ -524,25 +527,26 @@ def diamond_blastx(queryFileFasta: str, buscoTableFull: str, outputDirectory: st
 		--min-length 1000 \\
 		--in {queryFileFasta} \\
 		--busco {buscoTableFull} \\
-		--out {outputDirectory}/diamond/blastx/{filename}.chunks.fasta
+		--out {outputDirectory}/diamond/blastx/{filename}.{buscoLineage}.chunks.fasta
 
 	diamond blastx \\
 		--threads {options['cores']} \\
 		--db {diamondDatabaseFile} \\
-		--query {outputDirectory}/diamond/blastx/{filename}.chunks.fasta \\
+		--query {outputDirectory}/diamond/blastx/{filename}.{buscoLineage}.chunks.fasta \\
 		--outfmt 6 qseqid staxids bitscore qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore \\
 		--evalue 1.0e-25 \\
-		--max-target-seq 10 \\
+		--max-target-seqs 10 \\
 		--max-hsps 1 \\
-		--out {outputDirectory}/diamond/blastx/{filename}.diamondBlastx.chunks.txt \\
+		--taxon-exclude {excludeTaxon} \\
+		--out {outputDirectory}/diamond/blastx/{filename}.{buscoLineage}.diamondBlastx.chunks.txt \\
 		--log
 	
 	btk pipeline unchunk-blast \\
 		--count 10 \\
-		--in {outputDirectory}/diamond/blastx/{filename}.diamondBlastx.chunks.txt \\
-		--out {outputDirectory}/diamond/blastx/{filename}.diamondBlastx.prog.txt
+		--in {outputDirectory}/diamond/blastx/{filename}.{buscoLineage}.diamondBlastx.chunks.txt \\
+		--out {outputDirectory}/diamond/blastx/{filename}.{buscoLineage}.diamondBlastx.prog.txt
 
-	mv {outputDirectory}/diamond/blastx/{filename}.diamondBlastx.prog.txt {outputs['blast']}
+	mv {outputDirectory}/diamond/blastx/{filename}.{buscoLineage}.diamondBlastx.prog.txt {outputs['blast']}
 		
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -615,7 +619,7 @@ def diamond_blastx_no_hits(queryFileFasta: str, blastxResults: str, outputDirect
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-def ncbi_blastn(queryFileFasta: str, outputDirectory: str, environment: str, ncbiBlastDatabase: str = "/faststorage/project/EcoGenetics/databases/NCBI_BLAST_DB/nt/nt"):
+def ncbi_blastn(queryFileFasta: str, outputDirectory: str, excludeTaxon: str, environment: str, ncbiBlastDatabase: str):
 	"""
 	Template: template_description
 	
@@ -627,8 +631,12 @@ def ncbi_blastn(queryFileFasta: str, outputDirectory: str, environment: str, ncb
 	:param
 	"""
 	filename = os.path.basename(os.path.splitext(os.path.splitext(queryFileFasta)[0])[0]) if queryFileFasta.endswith('.gz') else os.path.basename(os.path.splitext(queryFileFasta)[0])
+	tag = ''
+	if excludeTaxon:
+		tag = f'.exclude{excludeTaxon}'
+		excludeTaxon = f'-negative_taxids {excludeTaxon}'
 	inputs = {}
-	outputs = {'blast': f'{outputDirectory}/blast/blastn/{filename}.blastBlastN.txt'}
+	outputs = {'blast': f'{outputDirectory}/blast/blastn/{filename}{tag}.blastBlastN.txt'}
 	options = {
 		'cores': 30,
 		'memory': '20g',
@@ -649,12 +657,12 @@ def ncbi_blastn(queryFileFasta: str, outputDirectory: str, environment: str, ncb
 		--min-length 1000 \\
 		--in {queryFileFasta} \\
 		--busco None \\
-		--out {outputDirectory}/blast/blastn/{filename}.chunks.fasta
+		--out {outputDirectory}/blast/blastn/{filename}{tag}.chunks.fasta
 
 	blastn \\
 		-num_threads {options['cores']} \\
-		-db {ncbiBlastDatabase} \\
-		-query {outputDirectory}/blast/blastn/{filename}.chunks.fasta \\
+		-db {ncbiBlastDatabase}/nt \\
+		-query {outputDirectory}/blast/blastn/{filename}{tag}.chunks.fasta \\
 		-task megablast \\
 		-outfmt '6 qseqid staxids bitscore std' \\
 		-max_target_seqs 10 \\
@@ -662,27 +670,111 @@ def ncbi_blastn(queryFileFasta: str, outputDirectory: str, environment: str, ncb
 		-evalue 1.0e-10 \\
 		-lcase_masking \\
 		-dust '20 64 1' \\
-		-out {outputDirectory}/blast/blastn/{filename}.blastBlastN.chunks.txt \\
-        2> >( tee {outputDirectory}/blast/blastn/{filename}.blastBlastN.error.log >&2 ) || true
+		{excludeTaxon} \\
+		-out {outputDirectory}/blast/blastn/{filename}{tag}.blastBlastN.chunks.txt \\
+        2> >( tee {outputDirectory}/blast/blastn/{filename}{tag}.blastBlastN.error.log >&2 ) || true
 
-	if [[ -s {outputDirectory}/blast/blastn/{filename}.blastBlastN.error.log ]]; then
-        grep -qF 'BLAST Database error: Taxonomy ID(s) not found.Taxonomy ID(s) not found' {outputDirectory}/blast/blastn/{filename}.error.log
+	if [[ -s {outputDirectory}/blast/blastn/{filename}{tag}.blastBlastN.error.log ]]; then
+        grep -qF 'BLAST Database error: Taxonomy ID(s) not found.Taxonomy ID(s) not found' {outputDirectory}/blast/blastn/{filename}{tag}.error.log
     fi
 	
 	btk pipeline unchunk-blast \\
 		--count 10 \\
-		--in {outputDirectory}/blast/blastn/{filename}.blastBlastN.chunks.txt \\
-		--out {outputDirectory}/blast/blastn/{filename}.blastBlastN.prog.txt
+		--in {outputDirectory}/blast/blastn/{filename}{tag}.blastBlastN.chunks.txt \\
+		--out {outputDirectory}/blast/blastn/{filename}{tag}.blastBlastN.prog.txt
 
-	mv {outputDirectory}/blast/blastn/{filename}.blastBlastN.prog.txt {outputs['blast']}
+	mv {outputDirectory}/blast/blastn/{filename}{tag}.blastBlastN.prog.txt {outputs['blast']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-def blobtoolkit_collate_stats(genomeAssemblyFile: str, buscoTables: list, windowsBedFile: str, windowFreqFile: str, windowMononucFile: str,
-							  regionsCoverageFile: str, outputDirectory: str, environment: str, windowSizes: list = [0.1, 0.01, 1, 100000, 1000000],
+def blobtoolkit_count_busco_genes(buscoTablesFull: list, windowsBedFile: str, filename: str, outputDirectory: str, environment: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'tables': buscoTablesFull,
+		   	  'bed': windowsBedFile}
+	outputs = {'count': f'{outputDirectory}/busco_count/{filename}.buscoGenes.tsv'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '00:30:00'
+	}
+	spec = f"""
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
+	
+	[ -d {outputDirectory}/busco_count ] || mkdir -p {outputDirectory}/busco_count
+	
+	btk pipeline count-busco-genes \\
+		--in {' --in '.join(buscoTablesFull)} \\
+		--mask {windowsBedFile} \\
+		--out {outputDirectory}/busco_count/{filename}.prog.buscoGenes.tsv
+	
+	mv {outputDirectory}/busco_count/{filename}.prog.buscoGenes.tsv {outputs['count']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
+
+def blobtoolkit_windowstats_input(countBuscoGenesFile: str, windowFreqFile: str, windowMononucFile: str, regionsCoverageFile: str,
+							  	  filename: str, outputDirectory: str, environment: str, windowstats_input: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/windowstatsInput.py'):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'genes': countBuscoGenesFile,
+			  'freq': windowFreqFile,
+			  'mononuc': windowMononucFile,
+			  'cov': regionsCoverageFile}
+	outputs = {'input': f'{outputDirectory}/windowStats/tmp/{filename}.windowStatsInput.tsv'}
+	options = {
+		'cores': 1,
+		'memory': '20g',
+		'walltime': '00:30:00'
+	}
+	spec = f"""
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
+	
+	[ -d {outputDirectory}/windowStats/tmp ] || mkdir -p {outputDirectory}/windowStats/tmp
+	
+	python {windowstats_input} \\
+		--freq {windowFreqFile} \\
+		--mononuc {windowMononucFile} \\
+		--depth {regionsCoverageFile} \\
+		--countbuscos {countBuscoGenesFile} \\
+		--prefix {outputDirectory}/windowStats/tmp/{filename}.windowStatsInput.prog
+	
+	mv {outputDirectory}/windowStats/tmp/{filename}.windowStatsInput.prog.tsv {outputs['input']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
+
+def blobtoolkit_collate_stats(countBuscoGenesFile: str, windowFreqFile: str, windowMononucFile: str, regionsCoverageFile: str,
+							  filename: str, outputDirectory: str, environment: str, windowSizes: list = ['0.1', '0.01', '1', '100000', '1000000'],
 							  windowstats_input: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/windowstats_input.py'):
 	"""
 	Template: template_description
@@ -694,17 +786,15 @@ def blobtoolkit_collate_stats(genomeAssemblyFile: str, buscoTables: list, window
 	
 	:param
 	"""
-	filename = os.path.basename(os.path.splitext(os.path.splitext(genomeAssemblyFile)[0])[0]) if genomeAssemblyFile.endswith('.gz') else os.path.basename(os.path.splitext(genomeAssemblyFile)[0])
-	inputs = {'busco': buscoTables,
-		   	  'bed': windowsBedFile,
+	inputs = {'genes': countBuscoGenesFile,
 			  'freq': windowFreqFile,
 			  'mononuc': windowMononucFile,
 			  'cov': regionsCoverageFile}
-	outputs = {'stats': [f'{outputDirectory}/windowStats/{filename}.windowStats.{size}.tsv' for size in windowSizes]}
+	outputs = {'stats': [f'{outputDirectory}/windowStats/{filename}.windowStats.windowSize{size}.tsv' for size in windowSizes]}
 	options = {
 		'cores': 1,
 		'memory': '10g',
-		'walltime': '12:00:00'
+		'walltime': '02:00:00'
 	}
 	spec = f"""
 	echo "START: $(date)"
@@ -714,28 +804,23 @@ def blobtoolkit_collate_stats(genomeAssemblyFile: str, buscoTables: list, window
 	
 	[ -d {outputDirectory}/windowStats/tmp ] || mkdir -p {outputDirectory}/windowStats/tmp
 	
-	btk pipeline count-busco-genes \\
-		--in {' '.join(buscoTables)} \\
-		--mask {windowsBedFile} \\
-		--out {outputDirectory}/windowStats/tmp/{filename}.buscoGenes.tsv
-	
 	python {windowstats_input} \\
 		--freq {windowFreqFile} \\
 		--mononuc {windowMononucFile} \\
 		--depth {regionsCoverageFile} \\
-		--countbusco {outputDirectory}/windowStats/tmp/{filename}.buscoGenes.tsv \\
+		--countbusco {countBuscoGenesFile} \\
 		--out {outputDirectory}/windowStats/tmp/{filename}.windowStatsInput.tsv
 	
-	windoiwsSizes=({' '.join(windowSizes)})
+	windowSizes=({' '.join(windowSizes)})
 	for size in "${{windowSizes[@]}}"; do
 		btk pipeline window-stats \\
 			--window "$size" \\
 			--in {outputDirectory}/windowStats/tmp/{filename}.windowStatsInput.tsv \\
-			--out {outputDirectory}/windowStats/{filename}.windowStats."$size".prog.tsv
+			--out {outputDirectory}/windowStats/{filename}.windowStats.windowSize"$size".prog.tsv
 	done
 	
 	for size in "${{windowSizes[@]}}"; do
-		mv {outputDirectory}/windowStats/{filename}.windowStats."$size".prog.tsv {outputDirectory}/windowStats/{filename}.windowStats."$size".tsv
+		mv {outputDirectory}/windowStats/{filename}.windowStats.windowSize"$size".prog.tsv {outputDirectory}/windowStats/{filename}.windowStats.windowSize"$size".tsv
 	done
 
 	echo "END: $(date)"
