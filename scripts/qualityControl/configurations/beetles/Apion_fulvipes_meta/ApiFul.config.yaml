@@ -1,0 +1,41 @@
+# (str). The name of the relevant project account.
+account: EcoGenetics
+# (str). Conda environment for assembly (gwf, pyyaml, ).
+condaEnvironment01: btk
+# (str). Name of species being analyzed
+speciesName: Apion fulvipes
+# (str.) Taxonomic group. Can be left empty.
+taxonomicGroup: Meta
+# (str). Directory for intermediate files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps
+# (str). Directory for final output files. Can be left empty (If left empty, output file will be placed within 'working_directory_path').
+outputDirectoryPath: 
+# (str). Path to genome assembly file for quality control.
+genomeAssemblyFile: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/scripts/qualityControl/configurations/beetles/Apion_fulvipes_meta/Apion_fulvipes_s0.2.p_ctg.fasta
+# (dict). Sequencing data setup.
+sampleSetup:
+  # (str). Name of sample data.
+  sampleName: Mix
+  # (str). Sequencing layout (single | paired)
+  layout: single
+  # (str). Type of sequencing data  (hifi | hic | ont)
+  datatype: pacbiohifi
+  # (list). List of paths to sequencing files.
+  sequencingFiles:
+    - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Apion_fulvipes/A_ful_m84108_240904_180129_s3.hifi_reads.bc2050.fastq.gz
+    - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Apion_fulvipes/ApiFul45A_m84108_230831_160317_s4.hifi_reads.bc1002.fastq.gz
+# (dict). Database setup.
+databases:
+  # (dict). BUSCO settings.
+  busco:
+    # (str). Path to BUSCO database directory.
+    path: /faststorage/project/EcoGenetics/databases/BUSCO_062025
+    # (list). Names of specific requested BUSCO datasets.
+    requestedLineages:
+      -
+  # (str). Path to UniProt reference proteomes database file.
+  uniprotPath: /faststorage/project/EcoGenetics/databases/UniProt_062025/reference_proteomes.dmnd
+  # (str). Path to NCBI Taxdump database directory.
+  ncbiTaxdumpPath: /faststorage/project/EcoGenetics/databases/NCBI_Taxdump_062025
+  # (str). Path to NCBI nt database directory.
+  ncbiNtPath: /faststorage/project/EcoGenetics/databases/NCBI_nt_062025

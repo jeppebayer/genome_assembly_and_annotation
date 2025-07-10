@@ -19,7 +19,7 @@ def make_dir(path):
 def merge_files(freqFile: str, mononucFile: str, depthFile: str, countBuscoFile: str):
 	freqFileIn = pd.read_csv(freqFile, sep='\t').rename(columns={"ID": "sequence", "GC_prop": "gc", "Prop_Ns": "n", "N": "ncount"})
 	mononucFileIn = pd.read_csv(mononucFile, sep='\t').rename(columns={"ID": "sequence", "GC_prop": "gc", "Prop_Ns": "n", "N": "ncount"})
-	depthFileIn = pd.read_csv(depthFile, sep='\t', names=['sequence', 'start', 'end', f'{os.path.basename(depthFile).replace("regionsCoverage.bed", "")}_cov'])
+	depthFileIn = pd.read_csv(depthFile, sep='\t', names=['sequence', 'start', 'end', f'{os.path.basename(depthFile).replace(".regionsCoverage.bed", "")}_cov'])
 	countBuscoFileIn = pd.read_csv(countBuscoFile, sep='\t').rename(columns={'ID': 'sequence'})
 	combined = freqFileIn.merge(mononucFileIn).merge(countBuscoFileIn).merge(depthFileIn)
 	return combined

@@ -12,8 +12,29 @@ workingDirectoryPath:
 outputDirectoryPath: 
 # (str). Path to genome assembly file for quality control.
 genomeAssemblyFile: 
-# (list). List of path to PacBio HiFi sequencing files.
-pacbioHifiReads:
-  - 
-# (str). Name of BUSCO dataset.
-buscoDatasetName: 
+# (dict). Sequencing data setup.
+sampleSetup:
+  # (str). Name of sample data.
+  sampleName: 
+  # (str). Sequencing layout (single | paired)
+  layout: 
+  # (str). Type of sequencing data  (hifi | hic | ont)
+  datatype: 
+  # (list). List of paths to sequencing files.
+  sequencingFiles:
+    - 
+# (dict). Database setup.
+databases:
+  # (dict). BUSCO settings.
+  busco:
+    # (str). Path to BUSCO database directory.
+    path: 
+    # (list). Names of specific requested BUSCO datasets.
+    requestedLineages:
+      -
+  # (str). Path to UniProt reference proteomes database file.
+  uniprotPath: 
+  # (str). Path to NCBI Taxdump database directory.
+  ncbiTaxdumpPath: 
+  # (str). Path to NCBI nt database directory.
+  ncbiNtPath: 

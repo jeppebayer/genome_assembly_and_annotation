@@ -126,7 +126,7 @@ def hifiadapterfilt(pacbioHifiFiles: list, outputDirectory: str, speciesName: st
 	options = {
 		'cores': 30,
 		'memory': '30g',
-		'walltime': '06:00:00'
+		'walltime': '08:00:00'
 	}
 	spec = f"""
 	echo "START: $(date)"

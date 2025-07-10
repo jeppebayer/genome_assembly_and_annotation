@@ -1,0 +1,64 @@
+assembly:
+  accession: draft
+  file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Lepidocyrtus_lignorum/draft_assembly/purge_dups_primary/02/LepLig.purged.fa
+  file_size(MB): 735
+  level: scaffold
+  scaffold-count: 2143
+  span: 723000446
+busco:
+  lineage_dir: /faststorage/project/EcoGenetics/databases/BUSCO_062025/lineages
+  lineages:
+  - hexapoda_odb12
+  - arthropoda_odb12
+  - metazoa_odb12
+  - eukaryota_odb12
+reads:
+  paired: []
+  single:
+  - file: /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Lepidocyrtus_lignorum/L_lig_m84108_241204_183609_s3.hifi_reads.bc2036.fq.gz
+    platform: PACBIO_SMRT
+revision: 1
+settings:
+  blast_chunk: 100000
+  blast_max_chunks: 10
+  blast_min_length: 1000
+  blast_overlap: 0
+  stats_chunk: 1000
+  stats_windows:
+  - 0.1
+  - 0.01
+  - 1
+  - 100000
+  - 1000000
+  taxdump: /faststorage/project/EcoGenetics/databases/NCBI_Taxdump_062025
+similarity:
+  blastn:
+    name: nt
+    path: /faststorage/project/EcoGenetics/databases/NCBI_nt_062025
+    source: ncbi
+  defaults:
+    evalue: 1.0e-10
+    import_evalue: 1.0e-25
+    max_target_seq: 10
+    taxrule: buscogenes
+  diamond_blastp:
+    import_max_target_seqs: 100000
+    name: reference_proteomes
+    path: /faststorage/project/EcoGenetics/databases/UniProt_062025/reference_proteomes.dmnd
+    source: uniprot
+    taxrule: blastp=buscogenes
+  diamond_blastx:
+    name: reference_proteomes
+    path: /faststorage/project/EcoGenetics/databases/UniProt_062025/reference_proteomes.dmnd
+    source: uniprot
+taxon:
+  class: Collembola
+  family: Entomobryidae
+  genus: Lepidocyrtus
+  kingdom: Metazoa
+  name: Lepidocyrtus lignorum
+  order: Entomobryomorpha
+  phylum: Arthropoda
+  superkingdom: Eukaryota
+  taxid: '707889'
+version: 1

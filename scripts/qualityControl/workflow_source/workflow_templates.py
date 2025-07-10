@@ -217,7 +217,7 @@ def fasta_windows(genomeAssemblyFile: str, outputDirectory: str, environment: st
 	mv {outputDirectory}/fw_out/{filename}.prog_trinuc_windows.tsv {outputs['tri']}
 	mv {outputDirectory}/fw_out/{filename}.prog_tetranuc_windows.tsv {outputs['tetra']}
 	mv {outputDirectory}/fw_out/{filename}.1k.prog.bed {outputs['bed']}
-	
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
@@ -377,7 +377,7 @@ def busco_genome(genomeAssemblyFile: str, buscoLineage: str, buscoDownloadPath: 
 	options = {
 		'cores': 30,
 		'memory': '200g',
-		'walltime': '10:00:00'
+		'walltime': '18:00:00'
 	}
 	spec = f"""
 	echo "START: $(date)"
@@ -507,7 +507,7 @@ def diamond_blastx(queryFileFasta: str, buscoTableFull: str, buscoLineage: str, 
 	outputs = {'blast': f'{outputDirectory}/diamond/blastx/{filename}.{buscoLineage}.diamondBlastx.txt'}
 	options = {
 		'cores': 30,
-		'memory': '20g',
+		'memory': '60g',
 		'walltime': '24:00:00'
 	}
 	spec = f"""
@@ -635,12 +635,12 @@ def ncbi_blastn(queryFileFasta: str, outputDirectory: str, excludeTaxon: str, en
 	if excludeTaxon:
 		tag = f'.exclude{excludeTaxon}'
 		excludeTaxon = f'-negative_taxids {excludeTaxon}'
-	inputs = {}
+	inputs = {'query': queryFileFasta}
 	outputs = {'blast': f'{outputDirectory}/blast/blastn/{filename}{tag}.blastBlastN.txt'}
 	options = {
-		'cores': 30,
+		'cores': 40,
 		'memory': '20g',
-		'walltime': '24:00:00'
+		'walltime': '72:00:00'
 	}
 	spec = f"""
 	echo "START: $(date)"
@@ -650,6 +650,8 @@ def ncbi_blastn(queryFileFasta: str, outputDirectory: str, excludeTaxon: str, en
 	
 	[ -d {outputDirectory}/blast/blastn ] || mkdir -p {outputDirectory}/blast/blastn
 	
+	export BLASTDB="{ncbiBlastDatabase}"
+
 	btk pipeline chunk-fasta \\
 		--chunk 100000 \\
 		--overlap 0 \\
@@ -672,11 +674,11 @@ def ncbi_blastn(queryFileFasta: str, outputDirectory: str, excludeTaxon: str, en
 		-dust '20 64 1' \\
 		{excludeTaxon} \\
 		-out {outputDirectory}/blast/blastn/{filename}{tag}.blastBlastN.chunks.txt \\
-        2> >( tee {outputDirectory}/blast/blastn/{filename}{tag}.blastBlastN.error.log >&2 ) || true
+		2> >( tee {outputDirectory}/blast/blastn/{filename}{tag}.blastBlastN.error.log >&2 ) || true
 
 	if [[ -s {outputDirectory}/blast/blastn/{filename}{tag}.blastBlastN.error.log ]]; then
-        grep -qF 'BLAST Database error: Taxonomy ID(s) not found.Taxonomy ID(s) not found' {outputDirectory}/blast/blastn/{filename}{tag}.error.log
-    fi
+		grep -qF 'BLAST Database error: Taxonomy ID(s) not found.Taxonomy ID(s) not found' {outputDirectory}/blast/blastn/{filename}{tag}.error.log
+	fi
 	
 	btk pipeline unchunk-blast \\
 		--count 10 \\
@@ -773,9 +775,7 @@ def blobtoolkit_windowstats_input(countBuscoGenesFile: str, windowFreqFile: str,
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-def blobtoolkit_collate_stats(countBuscoGenesFile: str, windowFreqFile: str, windowMononucFile: str, regionsCoverageFile: str,
-							  filename: str, outputDirectory: str, environment: str, windowSizes: list = ['0.1', '0.01', '1', '100000', '1000000'],
-							  windowstats_input: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/windowstats_input.py'):
+def blobtoolkit_windowstats(windowstatsInputFile: str, filename: str, outputDirectory: str, environment: str, windowSizes: list = ['0.1', '0.01', '1', '100000', '1000000']):
 	"""
 	Template: template_description
 	
@@ -786,11 +786,8 @@ def blobtoolkit_collate_stats(countBuscoGenesFile: str, windowFreqFile: str, win
 	
 	:param
 	"""
-	inputs = {'genes': countBuscoGenesFile,
-			  'freq': windowFreqFile,
-			  'mononuc': windowMononucFile,
-			  'cov': regionsCoverageFile}
-	outputs = {'stats': [f'{outputDirectory}/windowStats/{filename}.windowStats.windowSize{size}.tsv' for size in windowSizes]}
+	inputs = {'input': windowstatsInputFile}
+	outputs = {'stats': f'{outputDirectory}/windowStats/{filename}.windowStats.tsv'}
 	options = {
 		'cores': 1,
 		'memory': '10g',
@@ -802,33 +799,19 @@ def blobtoolkit_collate_stats(countBuscoGenesFile: str, windowFreqFile: str, win
 	echo "Conda Environment Info:"
 	conda env export --from-history
 	
-	[ -d {outputDirectory}/windowStats/tmp ] || mkdir -p {outputDirectory}/windowStats/tmp
+	[ -d {outputDirectory}/windowStats ] || mkdir -p {outputDirectory}/windowStats
 	
-	python {windowstats_input} \\
-		--freq {windowFreqFile} \\
-		--mononuc {windowMononucFile} \\
-		--depth {regionsCoverageFile} \\
-		--countbusco {countBuscoGenesFile} \\
-		--out {outputDirectory}/windowStats/tmp/{filename}.windowStatsInput.tsv
+	btk pipeline window-stats \\
+		--window {' --window '.join(windowSizes)} \\
+		--in {outputDirectory}/windowStats/tmp/{filename}.windowStatsInput.tsv \\
+		--out {outputDirectory}/windowStats/{filename}.windowStats.tsv
 	
-	windowSizes=({' '.join(windowSizes)})
-	for size in "${{windowSizes[@]}}"; do
-		btk pipeline window-stats \\
-			--window "$size" \\
-			--in {outputDirectory}/windowStats/tmp/{filename}.windowStatsInput.tsv \\
-			--out {outputDirectory}/windowStats/{filename}.windowStats.windowSize"$size".prog.tsv
-	done
-	
-	for size in "${{windowSizes[@]}}"; do
-		mv {outputDirectory}/windowStats/{filename}.windowStats.windowSize"$size".prog.tsv {outputDirectory}/windowStats/{filename}.windowStats.windowSize"$size".tsv
-	done
-
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-def blobtoolkit_create_blobdir(windowStatsFiles: list, outputDirectory: str, environment: str):
+def blobtoolkit_create_blobdir(genomeAssemblyFile: str, windowstatsFile: str, infoFile: str, ncbiTaxdump: str, diamondBlastpResults: list, buscoTablesFull: list, outputDirectory: str, environment: str):
 	"""
 	Template: template_description
 	
@@ -839,12 +822,104 @@ def blobtoolkit_create_blobdir(windowStatsFiles: list, outputDirectory: str, env
 	
 	:param
 	"""
-	inputs = {}
-	outputs = {}
+	filename = os.path.basename(os.path.splitext(os.path.splitext(genomeAssemblyFile)[0])[0]) if genomeAssemblyFile.endswith('.gz') else os.path.basename(os.path.splitext(genomeAssemblyFile)[0])
+	inputs = {'windowstats': windowstatsFile,
+		   	  'info': infoFile,
+			  'blastp': diamondBlastpResults,
+			  'busco': buscoTablesFull}
+	outputs = {'meta': f'{outputDirectory}/blobDir_{filename}/meta.json'}
 	options = {
 		'cores': 20,
 		'memory': '20g',
-		'walltime': '12:00:00'
+		'walltime': '02:00:00'
+	}
+	spec = f"""
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
+	
+	[ -d {outputDirectory}/blobDir_{filename} ] || mkdir -p {outputDirectory}/blobDir_{filename}
+
+	blobtools replace \\
+		--threads {options['cores']} \\
+		--bedtsvdir {os.path.dirname(windowstatsFile)} \\
+		--meta {infoFile} \\
+		--taxdump {ncbiTaxdump} \\
+		--taxrule buscogenes \\
+		--hits {' --hits '.join(diamondBlastpResults)} \\
+		--busco {' --busco '.join(buscoTablesFull)} \\
+		--evalue 1.0e-25 \\
+		--hit-count 10 \\
+		{outputDirectory}/blobDir_{filename}
+
+	touch {outputDirectory}/blobDir_{filename}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
+
+def blobtoolkit_update_blobdir(diamondBlastxResults: list, ncbiBlastnResults: list, ncbiTaxdump: str, blobdirMeta: str, environment: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'blastx': diamondBlastxResults,
+		   	  'blastn': ncbiBlastnResults,
+			  'meta': blobdirMeta}
+	outputs = {'buscoregions': f'{os.path.dirname(blobdirMeta)}/buscoregions_kingdom.json'}
+	options = {
+		'cores': 20,
+		'memory': '20g',
+		'walltime': '02:00:00'
+	}
+	spec = f"""
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
+	
+	blobtools replace \\
+		--threads {options['cores']} \\
+		--taxdump {ncbiTaxdump} \\
+		--taxrule bestdistorder=buscoregions \\
+		--hits {' --hits '.join(diamondBlastxResults)} \\
+		--hits {' --hits '.join(ncbiBlastnResults)} \\
+		--evalue 1.0e-25 \\
+		--hit-count 10 \\
+		{os.path.dirname(blobdirMeta)}
+	
+	touch {os.path.dirname(blobdirMeta)}/buscoregions_*
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
+
+def blobtoolkit_summary(blobdirFile: str, outputDirectory: str, environment: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'blobdir': blobdirFile}
+	outputs = {'summary': f'{os.path.dirname(blobdirFile)}/summary.json'}
+	options = {
+		'cores': 1,
+		'memory': '20g',
+		'walltime': '02:00:00'
 	}
 	spec = f"""
 	echo "START: $(date)"
@@ -854,67 +929,18 @@ def blobtoolkit_create_blobdir(windowStatsFiles: list, outputDirectory: str, env
 	
 	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
 	
-	blobtools replcae \\
-		--threads {options['cores']} \\
-		--bedtsvdir {os.path.dirname(windowStatsFiles[0])} \\
-		
-		--evalue 1.0e-25 --hit-count 10
+	blobtools filter \\
+		--summary {os.path.dirname(blobdirFile)}/summary.prog.json \\
+		{os.path.dirname(blobdirFile)}
 	
-	mv
+	mv {os.path.dirname(blobdirFile)}/summary.prog.json {outputs['summary']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-
-def busco_protein(proteinSequenceFile: str, buscoDataset: str, buscoDownloadPath: str = '/faststorage/project/EcoGenetics/databases/BUSCO'):
-	"""
-	Template: Runs BUSCO analysis on protein sequences from an annotated gene set.
-	
-	Template I/O::
-	
-		inputs = {}
-		outputs = {}
-	
-	:param
-	"""
-	inputs = {'genome': proteinSequenceFile}
-	outputs = {'stattxt': f'{os.path.dirname(proteinSequenceFile)}/busco_{os.path.basename(proteinSequenceFile)}/short_summary.specific.{buscoDataset}.busco_{os.path.basename(proteinSequenceFile)}.txt',
-			   'statjson': f'{os.path.dirname(proteinSequenceFile)}/busco_{os.path.basename(proteinSequenceFile)}/short_summary.specific.{buscoDataset}.busco_{os.path.basename(proteinSequenceFile)}.json'}
-	protect = [outputs['stattxt'], outputs['statjson']]
-	options = {
-		'cores': 30,
-		'memory': '50g',
-		'walltime': '10:00:00'
-	}
-	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
-	
-	echo "START: $(date)"
-	echo "JobID: $SLURM_JOBID"
-	
-	busco \\
-		--cpu {options['cores']} \\
-		--force \\
-		--in {proteinSequenceFile} \\
-		--mode proteins \\
-		--out busco_{os.path.basename(proteinSequenceFile)} \\
-		--out_path {os.path.dirname(proteinSequenceFile)} \\
-		--download_path {buscoDownloadPath} \\
-		--lineage {buscoDownloadPath}/lineages/{buscoDataset} \\
-		--tar
-	
-	echo "END: $(date)"
-	echo "$(jobinfo "$SLURM_JOBID")"
-	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
-
-def merqury(genomeAssemblyFile: str, pacbioHifiReads: str, outputDirectory: str):
+def blobtoolkit_images(genomeAssemblyFile: str, blobdirFile: str, outputDirectory: str, environment: str, plots: list = ['blob', 'cumulative', 'snail']):
 	"""
 	Template: template_description
 	
@@ -925,258 +951,391 @@ def merqury(genomeAssemblyFile: str, pacbioHifiReads: str, outputDirectory: str)
 	
 	:param
 	"""
+	filename = os.path.basename(os.path.splitext(os.path.splitext(genomeAssemblyFile)[0])[0]) if genomeAssemblyFile.endswith('.gz') else os.path.basename(os.path.splitext(genomeAssemblyFile)[0])
 	inputs = {'assembly': genomeAssemblyFile,
-		   	  'reads': pacbioHifiReads}
-	outputs = {}
+		   	  'blobdir':blobdirFile}
+	outputs = {'plots': [f'{outputDirectory}/plots/{filename}.{plotType}.svg' for plotType in plots]}
 	options = {
-		'cores': 60,
-		'memory': '100g',
-		'walltime': '24:00:00'
+		'cores': 1,
+		'memory': '20g',
+		'walltime': '02:00:00'
 	}
 	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
-	
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
+	echo "Conda Environment Info:"
+	conda env export --from-history
 	
-	[ -d {outputDirectory}/merqury ] || mkdir -p {outputDirectory}/merqury
+	[ -d {outputDirectory}/plots ] || mkdir -p {outputDirectory}/plots
 	
-	cd {outputDirectory}/merqury
-
-	kmersize="$( \\
-	"$(dirname "$(dirname "$(which merqury.sh)")")"/share/merqury/best_k.sh \\
-		$(seqtk size {genomeAssemblyFile} | cut -f 2) \\
-	| awk \\
-		'BEGIN{{FS=OFS=" "}}
-		{{if (NR == 3)
-			if (($0 - int($0)) >= 0.5)
-			{{print int($0) + 1; exit}}
+	plots=({' '.join(plots)})
+	for plotType in "${{plots[@]}}"; do
+		if [ "$plotType" == "snail" ]; then
+			legendType="default"
 		else
-			{{print int($0); exit}}
-		}}' \\
-	)"
+			legendType="full"
+		fi
 
-	meryl count \\
-		memory={options['memory']} \\
-		threads={options['cores']} \\
-		k="$kmersize" \\
-		output {os.path.basename(os.path.splitext(pacbioHifiReads)[0])}.meryl \\
-		{pacbioHifiReads}
+		blobtk plot \\
+			--view "$plotType" \\
+			--blobdir {os.path.dirname(blobdirFile)} \\
+			--output {outputDirectory}/plots/{filename}."$plotType".prog.svg \\
+			--legend "$legendType"
+	done
 
-	merqury.sh \\
-		{os.path.basename(os.path.splitext(pacbioHifiReads)[0])}.meryl \\
-		{genomeAssemblyFile} \\
-		{os.path.basename(os.path.splitext(pacbioHifiReads)[0])}
+	for plotType in "${{plots[@]}}"; do
+		mv {outputDirectory}/plots/{filename}."$plotType".prog.svg {outputDirectory}/plots/{filename}."$plotType".svg
+	done
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-def blobtools_blobdir(genomeAssemblyFile: str, speciesName: str, blastnResultFile: str, diamondResultFile: str, coverageAlignmentFile: str, buscoFullTableFile: str, ncbiTaxdumpDirectory: str = "/faststorage/project/EcoGenetics/databases/NCBI_Taxdump"):
+def get_versions(versionFiles: list, environment: str, group: str | None = None):
 	"""
-	Template: template_description
+	Template: Collect version information from all jobs
 	
 	Template I/O::
 	
-		inputs = {}
-		outputs = {}
+		inputs = {'versions': list}
+		outputs = {'versions': str}
 	
-	:param
+	:param list versionFiles:
+		List of version files from all jobs.
 	"""
-	inputs = {'assembly': genomeAssemblyFile,
-			  'blastn': blastnResultFile,
-			  'diamond': diamondResultFile,
-			  'coverage': coverageAlignmentFile,
-			  'busco': buscoFullTableFile}
-	outputs = {}
+	inputs = {'versions': versionFiles}
+	outputs = {'versions': f'{os.getcwd()}/versions.yml'}
 	options = {
-		'cores': 32,
-		'memory': '80g',
-		'walltime': '12:00:00'
+		'cores': 1,
+		'memory': '2g',
+		'walltime': '00:10:00'
 	}
 	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
 	
-	echo "START: $(date)"
-	echo "JobID: $SLURM_JOBID"
-	
-	[ -d {os.path.dirname(genomeAssemblyFile)}/qc/blobtools ] || mkdir -p {os.path.dirname(genomeAssemblyFile)}/qc/blobtools
+	cat <<-VERSIONS > {outputs['versions']}
+	workflow:
+		gwf: $(gwf --version | sed 's/gwf, version //')
+	VERSIONS
 
-	blobtools create \\
-		--threads {options['cores']} \\
-		--key assembly.alias="{speciesAbbreviation(speciesName)}" \\
-		--key record_type="scaffold" \\
-		--key taxon.name="{speciesName}" \\
-		--key taxon.genus="{speciesName.split(sep=" ")[0]}" \\
-		--key taxon.species="{speciesName}" \\
-		--fasta {genomeAssemblyFile} \\
-		--hits {blastnResultFile} \\
-		--hits {diamondResultFile} \\
-		--taxrule bestsumorder \\
-		--taxdump {ncbiTaxdumpDirectory} \\
-		--cov {coverageAlignmentFile} \\
-		--busco {buscoFullTableFile} \\
-		{os.path.dirname(genomeAssemblyFile)}/qc/blobtools/blobtools_{os.path.basename(genomeAssemblyFile)}
-	
+	cat \\
+		{' '.join(versionFiles)} \\
+		>> {os.getcwd()}/versions.yml
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment), group=group)
 
-def blobtools_blastn(genomeAssemblyFile: str, blastDatabase: str = "/faststorage/project/EcoGenetics/databases/NCBI_BLAST_DB/nt/nt"):
-	"""
-	Template: template_description
+# def busco_protein(proteinSequenceFile: str, buscoDataset: str, buscoDownloadPath: str = '/faststorage/project/EcoGenetics/databases/BUSCO'):
+# 	"""
+# 	Template: Runs BUSCO analysis on protein sequences from an annotated gene set.
 	
-	Template I/O::
+# 	Template I/O::
 	
-		inputs = {}
-		outputs = {}
+# 		inputs = {}
+# 		outputs = {}
 	
-	:param
-	"""
-	inputs = {'assembly': genomeAssemblyFile}
-	outputs = {'blast': f'{os.path.dirname(genomeAssemblyFile)}/qc/blastn/{os.path.basename(genomeAssemblyFile)}.blast.out'}
-	options = {
-		'cores': 32,
-		'memory': '20g',
-		'walltime': '48:00:00'
-	}
-	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
+# 	:param
+# 	"""
+# 	inputs = {'genome': proteinSequenceFile}
+# 	outputs = {'stattxt': f'{os.path.dirname(proteinSequenceFile)}/busco_{os.path.basename(proteinSequenceFile)}/short_summary.specific.{buscoDataset}.busco_{os.path.basename(proteinSequenceFile)}.txt',
+# 			   'statjson': f'{os.path.dirname(proteinSequenceFile)}/busco_{os.path.basename(proteinSequenceFile)}/short_summary.specific.{buscoDataset}.busco_{os.path.basename(proteinSequenceFile)}.json'}
+# 	protect = [outputs['stattxt'], outputs['statjson']]
+# 	options = {
+# 		'cores': 30,
+# 		'memory': '50g',
+# 		'walltime': '10:00:00'
+# 	}
+# 	spec = f"""
+# 	# Sources environment
+# 	if [ "$USER" == "jepe" ]; then
+# 		source /home/"$USER"/.bashrc
+# 		source activate assembly
+# 	fi
 	
-	echo "START: $(date)"
-	echo "JobID: $SLURM_JOBID"
+# 	echo "START: $(date)"
+# 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {os.path.dirname(genomeAssemblyFile)}/qc/blastn ] || mkdir -p {os.path.dirname(genomeAssemblyFile)}/qc/blastn
+# 	busco \\
+# 		--cpu {options['cores']} \\
+# 		--force \\
+# 		--in {proteinSequenceFile} \\
+# 		--mode proteins \\
+# 		--out busco_{os.path.basename(proteinSequenceFile)} \\
+# 		--out_path {os.path.dirname(proteinSequenceFile)} \\
+# 		--download_path {buscoDownloadPath} \\
+# 		--lineage {buscoDownloadPath}/lineages/{buscoDataset} \\
+# 		--tar
 	
-	blastn \\
-		-num_threads {options['cores']} \\
-		-task megablast \\
-		-db {blastDatabase} \\
-		-query {genomeAssemblyFile} \\
-		-outfmt "6 qseqid staxids bitscore std" \\
-		-max_target_seqs 10 \\
-		-max_hsps 1 \\
-		-evalue 1e-25 \\
-		-out {os.path.dirname(genomeAssemblyFile)}/qc/blastn/{os.path.basename(genomeAssemblyFile)}.blast.prog.out
-	
-	mv {os.path.dirname(genomeAssemblyFile)}/qc/blastn/{os.path.basename(genomeAssemblyFile)}.blast.prog.out {outputs['blast']}
-	
-	echo "END: $(date)"
-	echo "$(jobinfo "$SLURM_JOBID")"
-	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+# 	echo "END: $(date)"
+# 	echo "$(jobinfo "$SLURM_JOBID")"
+# 	"""
+# 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def blobtools_diamond(genomeAssemblyFile: str, diamondDatabaseFile: str = "/faststorage/project/EcoGenetics/databases/UniProt/reference_proteomes.dmnd"):
-	"""
-	Template: template_description
+# def merqury(genomeAssemblyFile: str, pacbioHifiReads: str, outputDirectory: str):
+# 	"""
+# 	Template: template_description
 	
-	Template I/O::
+# 	Template I/O::
 	
-		inputs = {}
-		outputs = {}
+# 		inputs = {}
+# 		outputs = {}
 	
-	:param
-	"""
-	inputs = {'assembly': genomeAssemblyFile}
-	outputs = {'diamond': f'{os.path.dirname(genomeAssemblyFile)}/qc/diamond/{os.path.basename(genomeAssemblyFile)}.diamond.out'}
-	options = {
-		'cores': 32,
-		'memory': '20g',
-		'walltime': '24:00:00'
-	}
-	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
+# 	:param
+# 	"""
+# 	inputs = {'assembly': genomeAssemblyFile,
+# 		   	  'reads': pacbioHifiReads}
+# 	outputs = {}
+# 	options = {
+# 		'cores': 60,
+# 		'memory': '100g',
+# 		'walltime': '24:00:00'
+# 	}
+# 	spec = f"""
+# 	# Sources environment
+# 	if [ "$USER" == "jepe" ]; then
+# 		source /home/"$USER"/.bashrc
+# 		source activate assembly
+# 	fi
 	
-	echo "START: $(date)"
-	echo "JobID: $SLURM_JOBID"
+# 	echo "START: $(date)"
+# 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {os.path.dirname(genomeAssemblyFile)}/qc/diamond ] || mkdir -p {os.path.dirname(genomeAssemblyFile)}/qc/diamond
+# 	[ -d {outputDirectory}/merqury ] || mkdir -p {outputDirectory}/merqury
 	
-	diamond blastx \\
-		--threads {options['cores']} \\
-		--db {diamondDatabaseFile} \\
-		--outfmt 6 qseqid staxids bitscore qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore \\
-		--sensitive \\
-		--max-target-seqs 1 \\
-		--evalue 1e-25 \\
-		--query {genomeAssemblyFile} \\
-		> {os.path.dirname(genomeAssemblyFile)}/qc/diamond/{os.path.basename(genomeAssemblyFile)}.diamond.prog.out
-	
-	mv {os.path.dirname(genomeAssemblyFile)}/qc/diamond/{os.path.basename(genomeAssemblyFile)}.diamond.prog.out {outputs['diamond']}
-	
-	echo "END: $(date)"
-	echo "$(jobinfo "$SLURM_JOBID")"
-	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+# 	cd {outputDirectory}/merqury
 
-def blobtools_coverage(genomeAssemblyFile: str, pacbioHifiReads: str):
-	"""
-	Template: template_description
+# 	kmersize="$( \\
+# 	"$(dirname "$(dirname "$(which merqury.sh)")")"/share/merqury/best_k.sh \\
+# 		$(seqtk size {genomeAssemblyFile} | cut -f 2) \\
+# 	| awk \\
+# 		'BEGIN{{FS=OFS=" "}}
+# 		{{if (NR == 3)
+# 			if (($0 - int($0)) >= 0.5)
+# 			{{print int($0) + 1; exit}}
+# 		else
+# 			{{print int($0); exit}}
+# 		}}' \\
+# 	)"
+
+# 	meryl count \\
+# 		memory={options['memory']} \\
+# 		threads={options['cores']} \\
+# 		k="$kmersize" \\
+# 		output {os.path.basename(os.path.splitext(pacbioHifiReads)[0])}.meryl \\
+# 		{pacbioHifiReads}
+
+# 	merqury.sh \\
+# 		{os.path.basename(os.path.splitext(pacbioHifiReads)[0])}.meryl \\
+# 		{genomeAssemblyFile} \\
+# 		{os.path.basename(os.path.splitext(pacbioHifiReads)[0])}
 	
-	Template I/O::
+# 	echo "END: $(date)"
+# 	echo "$(jobinfo "$SLURM_JOBID")"
+# 	"""
+# 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+# def blobtools_blobdir(genomeAssemblyFile: str, speciesName: str, blastnResultFile: str, diamondResultFile: str, coverageAlignmentFile: str, buscoFullTableFile: str, ncbiTaxdumpDirectory: str = "/faststorage/project/EcoGenetics/databases/NCBI_Taxdump"):
+# 	"""
+# 	Template: template_description
 	
-		inputs = {}
-		outputs = {}
+# 	Template I/O::
 	
-	:param
-	"""
-	inputs = {'assembly': genomeAssemblyFile,
-		   	  'hifireads': pacbioHifiReads}
-	outputs = {'alignment': f'{os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam',
-			   'index': f'{os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam.csi'}
-	options = {
-		'cores': 32,
-		'memory': '100g',
-		'walltime': '24:00:00'
-	}
-	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate assembly
-	fi
+# 		inputs = {}
+# 		outputs = {}
 	
-	echo "START: $(date)"
-	echo "JobID: $SLURM_JOBID"
+# 	:param
+# 	"""
+# 	inputs = {'assembly': genomeAssemblyFile,
+# 			  'blastn': blastnResultFile,
+# 			  'diamond': diamondResultFile,
+# 			  'coverage': coverageAlignmentFile,
+# 			  'busco': buscoFullTableFile}
+# 	outputs = {}
+# 	options = {
+# 		'cores': 32,
+# 		'memory': '80g',
+# 		'walltime': '12:00:00'
+# 	}
+# 	spec = f"""
+# 	# Sources environment
+# 	if [ "$USER" == "jepe" ]; then
+# 		source /home/"$USER"/.bashrc
+# 		source activate assembly
+# 	fi
 	
-	[ -d {os.path.dirname(genomeAssemblyFile)}/qc/coverage ] || mkdir -p {os.path.dirname(genomeAssemblyFile)}/qc/coverage
+# 	echo "START: $(date)"
+# 	echo "JobID: $SLURM_JOBID"
 	
-	minimap2 \\
-		-x map-hifi \\
-		-t {options['cores']} \\
-		-a \\
-		{genomeAssemblyFile} \\
-		{pacbioHifiReads} \\
-	| samtools sort \\
-		--threads {options['cores'] - 1} \\
-		--output-fmt BAM \\
-		-o {os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam
+# 	[ -d {os.path.dirname(genomeAssemblyFile)}/qc/blobtools ] || mkdir -p {os.path.dirname(genomeAssemblyFile)}/qc/blobtools
+
+# 	blobtools create \\
+# 		--threads {options['cores']} \\
+# 		--key assembly.alias="{speciesAbbreviation(speciesName)}" \\
+# 		--key record_type="scaffold" \\
+# 		--key taxon.name="{speciesName}" \\
+# 		--key taxon.genus="{speciesName.split(sep=" ")[0]}" \\
+# 		--key taxon.species="{speciesName}" \\
+# 		--fasta {genomeAssemblyFile} \\
+# 		--hits {blastnResultFile} \\
+# 		--hits {diamondResultFile} \\
+# 		--taxrule bestsumorder \\
+# 		--taxdump {ncbiTaxdumpDirectory} \\
+# 		--cov {coverageAlignmentFile} \\
+# 		--busco {buscoFullTableFile} \\
+# 		{os.path.dirname(genomeAssemblyFile)}/qc/blobtools/blobtools_{os.path.basename(genomeAssemblyFile)}
 	
-	samtools index \\
-		--threads {options['cores'] - 1} \\
-		--csi \\
-		--output {os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam.csi \\
-		{os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam
+# 	echo "END: $(date)"
+# 	echo "$(jobinfo "$SLURM_JOBID")"
+# 	"""
+# 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+# def blobtools_blastn(genomeAssemblyFile: str, blastDatabase: str = "/faststorage/project/EcoGenetics/databases/NCBI_BLAST_DB/nt/nt"):
+# 	"""
+# 	Template: template_description
 	
-	echo "END: $(date)"
-	echo "$(jobinfo "$SLURM_JOBID")"
-	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+# 	Template I/O::
+	
+# 		inputs = {}
+# 		outputs = {}
+	
+# 	:param
+# 	"""
+# 	inputs = {'assembly': genomeAssemblyFile}
+# 	outputs = {'blast': f'{os.path.dirname(genomeAssemblyFile)}/qc/blastn/{os.path.basename(genomeAssemblyFile)}.blast.out'}
+# 	options = {
+# 		'cores': 32,
+# 		'memory': '20g',
+# 		'walltime': '48:00:00'
+# 	}
+# 	spec = f"""
+# 	# Sources environment
+# 	if [ "$USER" == "jepe" ]; then
+# 		source /home/"$USER"/.bashrc
+# 		source activate assembly
+# 	fi
+	
+# 	echo "START: $(date)"
+# 	echo "JobID: $SLURM_JOBID"
+	
+# 	[ -d {os.path.dirname(genomeAssemblyFile)}/qc/blastn ] || mkdir -p {os.path.dirname(genomeAssemblyFile)}/qc/blastn
+	
+# 	blastn \\
+# 		-num_threads {options['cores']} \\
+# 		-task megablast \\
+# 		-db {blastDatabase} \\
+# 		-query {genomeAssemblyFile} \\
+# 		-outfmt "6 qseqid staxids bitscore std" \\
+# 		-max_target_seqs 10 \\
+# 		-max_hsps 1 \\
+# 		-evalue 1e-25 \\
+# 		-out {os.path.dirname(genomeAssemblyFile)}/qc/blastn/{os.path.basename(genomeAssemblyFile)}.blast.prog.out
+	
+# 	mv {os.path.dirname(genomeAssemblyFile)}/qc/blastn/{os.path.basename(genomeAssemblyFile)}.blast.prog.out {outputs['blast']}
+	
+# 	echo "END: $(date)"
+# 	echo "$(jobinfo "$SLURM_JOBID")"
+# 	"""
+# 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+# def blobtools_diamond(genomeAssemblyFile: str, diamondDatabaseFile: str = "/faststorage/project/EcoGenetics/databases/UniProt/reference_proteomes.dmnd"):
+# 	"""
+# 	Template: template_description
+	
+# 	Template I/O::
+	
+# 		inputs = {}
+# 		outputs = {}
+	
+# 	:param
+# 	"""
+# 	inputs = {'assembly': genomeAssemblyFile}
+# 	outputs = {'diamond': f'{os.path.dirname(genomeAssemblyFile)}/qc/diamond/{os.path.basename(genomeAssemblyFile)}.diamond.out'}
+# 	options = {
+# 		'cores': 32,
+# 		'memory': '20g',
+# 		'walltime': '24:00:00'
+# 	}
+# 	spec = f"""
+# 	# Sources environment
+# 	if [ "$USER" == "jepe" ]; then
+# 		source /home/"$USER"/.bashrc
+# 		source activate assembly
+# 	fi
+	
+# 	echo "START: $(date)"
+# 	echo "JobID: $SLURM_JOBID"
+	
+# 	[ -d {os.path.dirname(genomeAssemblyFile)}/qc/diamond ] || mkdir -p {os.path.dirname(genomeAssemblyFile)}/qc/diamond
+	
+# 	diamond blastx \\
+# 		--threads {options['cores']} \\
+# 		--db {diamondDatabaseFile} \\
+# 		--outfmt 6 qseqid staxids bitscore qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore \\
+# 		--sensitive \\
+# 		--max-target-seqs 1 \\
+# 		--evalue 1e-25 \\
+# 		--query {genomeAssemblyFile} \\
+# 		> {os.path.dirname(genomeAssemblyFile)}/qc/diamond/{os.path.basename(genomeAssemblyFile)}.diamond.prog.out
+	
+# 	mv {os.path.dirname(genomeAssemblyFile)}/qc/diamond/{os.path.basename(genomeAssemblyFile)}.diamond.prog.out {outputs['diamond']}
+	
+# 	echo "END: $(date)"
+# 	echo "$(jobinfo "$SLURM_JOBID")"
+# 	"""
+# 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+# def blobtools_coverage(genomeAssemblyFile: str, pacbioHifiReads: str):
+# 	"""
+# 	Template: template_description
+	
+# 	Template I/O::
+	
+# 		inputs = {}
+# 		outputs = {}
+	
+# 	:param
+# 	"""
+# 	inputs = {'assembly': genomeAssemblyFile,
+# 		   	  'hifireads': pacbioHifiReads}
+# 	outputs = {'alignment': f'{os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam',
+# 			   'index': f'{os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam.csi'}
+# 	options = {
+# 		'cores': 32,
+# 		'memory': '100g',
+# 		'walltime': '24:00:00'
+# 	}
+# 	spec = f"""
+# 	# Sources environment
+# 	if [ "$USER" == "jepe" ]; then
+# 		source /home/"$USER"/.bashrc
+# 		source activate assembly
+# 	fi
+	
+# 	echo "START: $(date)"
+# 	echo "JobID: $SLURM_JOBID"
+	
+# 	[ -d {os.path.dirname(genomeAssemblyFile)}/qc/coverage ] || mkdir -p {os.path.dirname(genomeAssemblyFile)}/qc/coverage
+	
+# 	minimap2 \\
+# 		-x map-hifi \\
+# 		-t {options['cores']} \\
+# 		-a \\
+# 		{genomeAssemblyFile} \\
+# 		{pacbioHifiReads} \\
+# 	| samtools sort \\
+# 		--threads {options['cores'] - 1} \\
+# 		--output-fmt BAM \\
+# 		-o {os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam
+	
+# 	samtools index \\
+# 		--threads {options['cores'] - 1} \\
+# 		--csi \\
+# 		--output {os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam.csi \\
+# 		{os.path.dirname(genomeAssemblyFile)}/qc/coverage/{os.path.basename(genomeAssemblyFile)}.hifireads.bam
+	
+# 	echo "END: $(date)"
+# 	echo "$(jobinfo "$SLURM_JOBID")"
+# 	"""
+# 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)

@@ -12,18 +12,29 @@ workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome
 outputDirectoryPath: 
 # (str). Path to genome assembly file for quality control.
 genomeAssemblyFile: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Lepidocyrtus_lignorum/draft_assembly/purge_dups_primary/02/LepLig.purged.fa
+# (dict). Sequencing data setup.
 sampleSetup:
+  # (str). Name of sample data.
   sampleName: L_lig_m84108_241204_183609_s3
+  # (str). Sequencing layout (single | paired)
+  layout: single
+  # (str). Type of sequencing data  (hifi | hic | ont)
   datatype: pacbiohifi
   # (list). List of paths to sequencing files.
   sequencingFiles:
     - /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Lepidocyrtus_lignorum/L_lig_m84108_241204_183609_s3.hifi_reads.bc2036.fq.gz
+# (dict). Database setup.
 databases:
+  # (dict). BUSCO settings.
   busco:
+    # (str). Path to BUSCO database directory.
     path: /faststorage/project/EcoGenetics/databases/BUSCO_062025
     # (list). Names of specific requested BUSCO datasets.
     requestedLineages:
       -
+  # (str). Path to UniProt reference proteomes database file.
   uniprotPath: /faststorage/project/EcoGenetics/databases/UniProt_062025/reference_proteomes.dmnd
+  # (str). Path to NCBI Taxdump database directory.
   ncbiTaxdumpPath: /faststorage/project/EcoGenetics/databases/NCBI_Taxdump_062025
+  # (str). Path to NCBI nt database directory.
   ncbiNtPath: /faststorage/project/EcoGenetics/databases/NCBI_nt_062025

@@ -1,0 +1,68 @@
+assembly:
+  accession: draft
+  file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/scripts/qualityControl/configurations/beetles/Apion_fulvipes_meta/Apion_fulvipes_s0.2.p_ctg.fasta
+  file_size(MB): 4632
+  level: scaffold
+  scaffold-count: 111279
+  span: 4629700139
+busco:
+  lineage_dir: /faststorage/project/EcoGenetics/databases/BUSCO_062025/lineages
+  lineages:
+  - polyphaga_odb12
+  - coleoptera_odb12
+  - endopterygota_odb12
+  - insecta_odb12
+  - hexapoda_odb12
+  - arthropoda_odb12
+  - metazoa_odb12
+  - eukaryota_odb12
+reads:
+  paired: []
+  single:
+  - file: /faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Apion_fulvipes/A_ful_m84108_240904_180129_s3.hifi_reads.bc2050.fastq.gz;/faststorage/project/EcoGenetics/BACKUP/genome_assembly_and_annotation/pacbio_hifi/Apion_fulvipes/ApiFul45A_m84108_230831_160317_s4.hifi_reads.bc1002.fastq.gz
+    platform: PACBIO_SMRT
+revision: 1
+settings:
+  blast_chunk: 100000
+  blast_max_chunks: 10
+  blast_min_length: 1000
+  blast_overlap: 0
+  stats_chunk: 1000
+  stats_windows:
+  - 0.1
+  - 0.01
+  - 1
+  - 100000
+  - 1000000
+  taxdump: /faststorage/project/EcoGenetics/databases/NCBI_Taxdump_062025
+similarity:
+  blastn:
+    name: nt
+    path: /faststorage/project/EcoGenetics/databases/NCBI_nt_062025
+    source: ncbi
+  defaults:
+    evalue: 1.0e-10
+    import_evalue: 1.0e-25
+    max_target_seq: 10
+    taxrule: buscogenes
+  diamond_blastp:
+    import_max_target_seqs: 100000
+    name: reference_proteomes
+    path: /faststorage/project/EcoGenetics/databases/UniProt_062025/reference_proteomes.dmnd
+    source: uniprot
+    taxrule: blastp=buscogenes
+  diamond_blastx:
+    name: reference_proteomes
+    path: /faststorage/project/EcoGenetics/databases/UniProt_062025/reference_proteomes.dmnd
+    source: uniprot
+taxon:
+  class: Insecta
+  family: Apionidae
+  genus: Apion
+  kingdom: Metazoa
+  name: Apion fulvipes (unclassified Apion)
+  order: Coleoptera
+  phylum: Arthropoda
+  superkingdom: Eukaryota
+  taxid: '2637031'
+version: 1
