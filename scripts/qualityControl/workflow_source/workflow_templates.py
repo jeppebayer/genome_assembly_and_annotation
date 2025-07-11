@@ -571,7 +571,7 @@ def diamond_blastx_no_hits(queryFileFasta: str, blastxResults: str, outputDirect
 			   'fasta': f'{outputDirectory}/diamond/blastx/{filename}.nohit.fa'}
 	options = {
 		'cores': 1,
-		'memory': '10g',
+		'memory': '80g',
 		'walltime': '06:00:00'
 	}
 	spec = f"""
@@ -992,7 +992,7 @@ def blobtoolkit_images(genomeAssemblyFile: str, blobdirFile: str, outputDirector
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment))
 
-def get_versions(versionFiles: list, environment: str, group: str | None = None):
+def get_versions(versionFiles: list, environment: str, group: str = None):
 	"""
 	Template: Collect version information from all jobs
 	
